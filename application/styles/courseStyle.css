@@ -1,0 +1,70 @@
+/* ---------------------------------------------------
+    SIDEBAR STYLE
+----------------------------------------------------- */
+
+#sidebar {
+    width: 250px;
+    position: fixed;
+    top: 55px;
+    left: -250px;
+    height: 100vh;
+    z-index: 999;
+    background: #3d4248;
+    color: #fff;
+    transition: all 0.3s;
+    overflow-y: scroll;
+    box-shadow: 3px 3px 3px rgba(0, 0, 0, 0.2);
+}
+
+#sidebar.active {
+    left: 0;
+}
+
+.overlay {
+    display: none;
+    position: fixed;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 998;
+    opacity: 0;
+    transition: all 0.75s fade-in-out;
+}
+.overlay.active {
+    display: block;
+    opacity: 1;
+}
+
+a[data-toggle="collapse"] {
+    position: relative;
+}
+
+#resize {
+    background-color:#FFFFFF;
+    position: absolute;
+    right: 0;
+    width: 4px;
+    height: 100%;
+    cursor: ew-resize;
+}
+
+
+#resizeHorizontal {
+    background-color: #FFFFFF;
+    position:absolute;
+	top:0;
+	left:0;
+    height: 4px;
+    width: 100%;
+    cursor: ns-resize;
+}
+
+#bottomRightPanel{
+	font-family:courier-new,courier,monospace;
+	font-feature-settings:"liga" 0;
+	overflow:scroll
+}
+
+body{
+	overflow: -moz-hidden-unscrollable;
+}

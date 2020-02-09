@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% set active_page = "viewCourses" %}
+
+{% block head %}
+<title>Courses</title>
+{% endblock %}
+
+{% block body %}
+<br>
+<div>
+<h1>Courses:<a class="btn btn-primary btn-lg pull-right" href="/editCourse?action=new" style="float:right"> New Course</a></h1>
+</div>
+<hr>
+{% include 'notify.html' %}
+<div class="row row-cols-1 row-cols-md-3">
+	{% for course in courses %}
+	<div class="col mb-4" style="max-width:400px">
+		<div class="card h-100">
+    	<img src="http://sddmajorproject.jackdonaldson1.repl.co/static?filename={{course.headerImageLocation}}&dir=course_data/{{course.id}}" class="card-img-top" style="max-height:200px;min-height:200px">
+    	<div class="card-body">
+      	<h5 class="card-title">{{course.name}}	
+		{% if course.public %}
+			<span class="badge badge-success">Released</span>
+		{% else %}
+			<span class="badge badge-warning">Unreleased</span>
+		{% endif %}</h5>
+      	<p class="card-text">{{course.description}}</p>
+    	</div>
+    	<div class="card-footer">
+			<div>
+			<a class="btn btn-dark" href="/editCourse?action=edit&ID={{course.id}}">Edit</a>
+			<a class="btn btn-danger float-right" href="/editCourse?action=delete&ID={{course.id}}">Delete</a>
+		</div>
+      		<small class="text-muted">{{course.courseCreateDate.strftime('Created on the %d/%m/%Y')}}</small>
+    	</div></div>
+  		</div>
+	{% endfor %}
+</div>
+<small class="text-muted">End of courses list.</small>
+{% endblock %}

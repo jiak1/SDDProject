@@ -1,0 +1,28 @@
+5/02
+- Started Project
+- Bootstrap is amazing
+6/02
+- Having issues using url_for rather than hardcoding them
+- Fixed issue had to reference app and place myApp in front of the function name
+- Had issues getting redirection to work so when you got kicked off a page for not logging in it brought you straight back to it
+- Used fontawesome for icons
+7/02
+- Moved from hard coding notifications to flashes which allows redirecting the url first
+- had issues trying to add columns to database for isAdmin parameter, tried to use flask-migrate library but issue turned out being getting the shell open in repl.it
+- There was another issue accessing the database where it would work fine but trying to migrate gave error about location, this was cause i was using a relative path so making it a fixed one resolved this issue after looking at stack overflow for a bit
+- Made it so admin accounts can't delete themselves cause then you have cases where there is no longer any admin accounts, plus i definitley didn't accidentally do this
+8/02
+- Added courses page and had a lot of trouble trying to get the relationship database to work
+- Resorted to changing from sqlite to mysql so i can have a visual interface
+- Currently trying to get sidebar working, turns out jquery was loading after i was trying to use it thus it wasn't working properly and saying it wasn't installed
+9/02
+- Had issues with the bootstrap close button not being white, tried to use my own one but gave up because i couldn't figure out how to get the text i.e the X inside it to scale properly.
+- Wanted to murder the computer because it shouldn't be this hard to split up a page into quarters so i can make the problem window, console and programming section. I could not for the life of me find a way to make it fill the height of the screen whilst not overlapping the navbars or showing scrollbars.
+- After hours of trying different things i have decided to use javascript to update the size of it. I am currently using flags to check it is runnning through the use of javascripts alert() function which displays a message to the user. It is now running whenever i resize the window.
+- I have finally got it to do the right size i had an issue where it was using .height which didn't include the margins and padding of the scrollbars but i have now fixed that by using .outerHeight()
+
+MIGRATION COMMANDS
+1) CTRL+SHIFT+P then type open shell
+2) type export FLASK_APP=main
+3) then type flask db migrate -m "Update notes"
+4) then type flask db upgrade

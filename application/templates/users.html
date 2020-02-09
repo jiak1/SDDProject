@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{% set active_page = "users" %}
+
+{% block head %}
+<title>Users</title>
+{% endblock %}
+
+{% block body %}
+<br>
+<h1>Users</h1>
+<hr>
+{% include 'notify.html' %}
+{% for user in users %}
+	<h2>{{user.username}}
+	{% if current_user.username == user.username %}
+		<span class="badge badge-dark">You</span>
+	{% endif %}
+	</h2>
+	<p>{{user.email}}</p>
+	<div>
+	{% if user.isAdmin %}
+		{% if current_user.username != user.username %}
+		<a class="btn btn-warning" href="/users?action=disableAdmin&username={{user.username}}">Remove Admin</a>
+		{% endif %}
+	{% else %}
+		<a class="btn btn-primary" href="/users?action=enableAdmin&username={{user.username}}">Make Admin</a>
+	{% endif %}
+	{% if current_user.username != user.username %}
+		<a class="btn btn-danger" href="/users?action=delete&username={{user.username}}">Delete</a>
+	{% endif %}
+	</div>
+	<hr>
+{% endfor %}
+<small class="text-muted">End of user list.</small>
+{% endblock %}

@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% set active_page = "home" %}
+
+{% block head %}
+<title>Home</title>
+{% endblock %}
+
+{% block body %}
+{% if current_user.is_anonymous %}
+{% else %}
+<br>
+<h1>Available Courses:</h1>
+<hr>
+{% include 'notify.html' %}
+<div class="row row-cols-1 row-cols-md-3">
+	{% for course in courses %}
+	{% if course.public %}
+	<div class="col mb-4" style="max-width:400px">
+		<div class="card h-100">
+    	<img src="http://sddmajorproject.jackdonaldson1.repl.co/static?filename={{course.headerImageLocation}}&dir=course_data/{{course.id}}" class="card-img-top" style="max-height:200px;min-height:200px">
+    	<div class="card-body">
+      	<h5 class="card-title">{{course.name}}	</h5>
+      	<p class="card-text">{{course.description}}</p>
+    	</div>
+    	<div class="card-footer">
+			<div>
+			{% if current_user.inCourse(course.id) %}
+			<a class="btn btn-primary" href="/course?ID={{course.id}}">Continue</a>
+			{% else %}
+			<a class="btn btn-success" href="/enroll?ID={{course.id}}">Enroll</a>
+			{% endif %}
+		</div></div></div></div>
+	{% endif %}
+	{% endfor %}
+</div>
+<small class="text-muted">End of courses list.</small>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% set active_page = "blocked" %}
+
+{% block head %}
+<title>Permission Denied</title>
+{% endblock %}
+
+{% block body %}
+<br>
+{% include 'notify.html' %}
+<br>
+<div class="jumbotron" style="margin:10px">
+<div class="container">
+  <h1 class="display-4">Woops, we can't let you view this page!</h1>
+  <p class="lead">The page you have tried to view requires administrator privileges. Check that you have entered the URL correctly if you believe this is a mistake. </p>
+  <hr class="my-4">
+  <p>If the issue persists please log back in and try again.</p>
+  <a class="btn btn-dark btn-lg" href="/" role="button">Home</a>
+</div></div>
+{% endblock %}

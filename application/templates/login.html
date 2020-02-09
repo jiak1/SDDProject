@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+{% set active_page = "login" %}
+
+{% block head %}
+<title>Login</title>
+{% endblock %}
+
+{% block body %}
+<br>
+<h1>Enter your details below to login:</h1>
+<hr>
+{% include 'notify.html' %}
+<form action="{{url_for('myApp.loginPage')}}" class="needs-validation" method="POST" novalidate>
+	<div class="form-group">
+    	<label>Username</label>
+    	<input type="text" name="username" maxlength="20" minlength="4" class="form-control" required>
+		<div class="valid-feedback">
+        Looks good!
+      	</div>
+		<div class="invalid-feedback">
+        Please enter a username more than 4 characters.
+      	</div>
+  	</div>
+	<div class="form-group">
+    	<label>Password</label>
+    	<input type="password" name="password" maxlength="30" minlength="4" class="form-control" required>
+		<div class="valid-feedback">
+        Looks good!
+      	</div>
+		<div class="invalid-feedback">
+        Please enter a valid password that is more than 4 characters.
+      	</div>
+  	</div>
+	<div class="form-group form-check">
+    <input type="checkbox" class="form-check-input" name="remember">
+    <label class="form-check-label">Keep Me Logged In On This Device</label>
+  	</div>
+	<input type="hidden" name="args" id="argInput"/>
+	<input type="submit" class="btn btn-primary" value="Login">
+</form>
+<script>
+const queryString = window.location.search;
+const urlParams = new URLSearchParams(queryString);
+const next = urlParams.get('next')
+document.getElementById("argInput").value = next;
+</script>
+<script>
+// Example starter JavaScript for disabling form submissions if there are invalid fields
+(function() {
+  'use strict';
+  window.addEventListener('load', function() {
+    // Fetch all the forms we want to apply custom Bootstrap validation styles to
+    var forms = document.getElementsByClassName('needs-validation');
+    // Loop over them and prevent submission
+    var validation = Array.prototype.filter.call(forms, function(form) {
+      form.addEventListener('submit', function(event) {
+        if (form.checkValidity() === false) {
+          event.preventDefault();
+          event.stopPropagation();
+        }
+        form.classList.add('was-validated');
+      }, false);
+    });
+  }, false);
+})();
+</script>
+{% endblock %}

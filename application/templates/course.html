@@ -1,0 +1,232 @@
+{% extends 'base.html' %}
+{% set active_page = "viewCourse" %}
+
+{% block head %}
+<title>{{course.name}}</title>
+<link rel="stylesheet" type="text/css" href="http://sddmajorproject.jackdonaldson1.repl.co/static?filename=courseStyle.css&dir=styles/">
+{% endblock %}
+
+{% block beforeBody %}
+{% endblock %}
+
+{% block body %}
+</div>
+<div class="overlay"></div>
+<nav id= "secondNav" class="navbar navbar-expand navbar-dark bg-secondary flex-nowrap">
+    <button class="navbar-toggler mr-2" type="button" data-toggle="collapse" data-target="#navbar5">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+    <span><button type="button" id="sidebarCollapse" style="color:white;padding: 0;border: none;background: none;"><i class="fas fa-align-left"></i></button></span>
+
+    <div class="navbar-collapse collapse justify-content-center" id="navbar5">
+        <ul class="navbar-nav mx-auto">
+			<button style="color:white;padding: 0;border: none;background: none;" type="submit"><i class="fas fa-arrow-left"></i></button>
+            <li class="nav-item">
+                <a class="nav-link active" style="text-align:center">Problem Name</a>
+            </li>
+			<button style="color:white;padding: 0;border: none;background: none;" type="submit"><i class="fas fa-arrow-right"></i></button>
+        </ul>
+    </div>
+
+
+	<div>
+		<button style="color:white;padding: 0;border: none;background: none;" type="submit"><i class="fas fa-play"></i> Play</button>
+		&nbsp&nbsp
+		<button style="color:white;padding: 0;border: none;background: none;" type="submit"><i class="fas fa-save"></i> Save</button>
+		&nbsp&nbsp
+		<button style="color:white;padding: 0;border: none;background: none;" type="submit"><i class="fas fa-highlighter"></i> Mark</button>
+		</div>
+    </div>
+</nav>
+
+    <div class="wrapper">
+        <!-- Sidebar  -->
+        <nav id="sidebar">
+			<div class="container" style="padding-top:12.5px">
+			<div><button type="button" class="close close-btn" style="color:#FFFFFF;opacity:1;" data-dismiss="modal" aria-label="Close" id="dismiss">&times;</button>
+			<h5 style="display:inline">{{course.name}}</h5>
+			<p style="margin-top:10px">Created by Jack Donaldson</p>
+			<hr style="background-color:white"></div>
+
+			</div>
+        </nav>
+
+    </div>
+
+	<div class="container-fluid">
+	<div class="row" id ="problemView">
+		<div class="col-8" id ="leftPanel" style="background:#e0e0e0"><div id="resize"></div>OTHER AREA</div>
+		<div class="col-4">
+			<div class="d-flex flex-column">
+				<div class="row">
+				<div class="text-white" id ="topRightPanel"  style="background:#343a40">
+					<textarea class="overflow-auto" id="codeWindow" style="min-height:inherit;max-height:inherit;min-width:inherit;max-width:inherit;padding:5px;color:white;background-color:#ff000000">Enter your code here... </textarea>
+				</div>
+				</div>
+				<div class="row">
+				<div class="text-white" id ="bottomRightPanel"  style="background:black;position:relative"><div id="resizeHorizontal"></div>
+				<div class="overflow-auto" style="max-height:inherit;padding:5px"> This is some sample text to make it look like this part is working.
+				Beep booop!</div></div></div>
+				</div>
+			</div>
+		</div>
+	</div>
+	</div>
+
+<div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/malihu-custom-scrollbar-plugin/3.1.5/jquery.mCustomScrollbar.concat.min.js"></script>
+<script type="text/javascript">
+        $(document).ready(function () {
+            $("#sidebar").mCustomScrollbar({
+                theme: "minimal"
+            });
+
+            $('#dismiss, .overlay').on('click', function () {
+                $('#sidebar').removeClass('active');
+                $('.overlay').removeClass('active');
+            });
+
+            $('#sidebarCollapse').on('click', function () {
+                $('#sidebar').addClass('active');
+                $('.overlay').addClass('active');
+                $('.collapse.in').toggleClass('in');
+                $('a[aria-expanded=true]').attr('aria-expanded', 'false');
+            });
+        });
+    </script>
+<script>
+var w_pos;var h_pos;
+updateSizes();
+
+leftPanel = $("#leftPanel")
+leftPanelElement = document.getElementById("leftPanel");
+
+topRightPanel = $("#topRightPanel")
+topRightPanelElement = document.getElementById("topRightPanel");
+
+bottomRightPanel = $("#bottomRightPanel")
+bottomRightPanelElement = document.getElementById("bottomRightPanel");
+
+updateSizes();
+setupDefault();
+
+
+window.onresize = function(event) {
+    updateSizes();
+	setupDefault();
+}
+
+window.onload = function(event) {
+    updateSizes();
+	setupDefault();
+}
+
+function updateSizes(){
+	windowWidth = $(window).width();
+	nvh = $('#mainNav').outerHeight(true);
+	nvh2 = $('#secondNav').outerHeight(true);
+    vpw = $(window).width();
+    vph = $(window).height();
+    windowHeight = vph-nvh-nvh2;
+
+	minWidth= windowWidth*0.35
+	maxWidth = windowWidth*0.55
+
+	minHeight= windowHeight*0.45
+	maxHeight = windowHeight*0.7
+
+	$('#problemView').css({'min-height': windowHeight + 'px'});
+	$('#problemView').css({'max-height': windowHeight + 'px'});
+
+}
+
+function setupDefault(){
+	leftSide = windowWidth/2;
+	rightSide = windowWidth-leftSide+"px"
+	leftSide = leftSide+"px"
+
+	leftPanel.css({'min-width': leftSide});
+	leftPanel.css({'max-width': leftSide});
+
+	topRightPanel.css({'min-width': rightSide});
+	topRightPanel.css({'max-width': rightSide});
+
+	bottomRightPanel.css({'min-width': rightSide});
+	bottomRightPanel.css({'max-width': rightSide});
+
+	setupDefaultHeight();
+}
+
+function setupDefaultHeight(){
+	topSide = windowHeight/2;
+	bottomSide = (windowHeight-topSide)-0+"px"
+	topSide = topSide+"px"
+
+	topRightPanel.css({'min-height': topSide});
+	topRightPanel.css({'max-height': topSide});
+
+	bottomRightPanel.css({'min-height': bottomSide});
+	bottomRightPanel.css({'max-height': bottomSide});
+
+	leftPanel.css({'min-height': windowHeight});
+	leftPanel.css({'max-height': windowHeight});
+}
+
+function resizeWidth(e){
+    var dx = w_pos - e.x;
+    w_pos = e.x;
+
+	leftSide = Math.min(Math.max((parseInt(getComputedStyle(leftPanelElement, '').width) - dx), minWidth),maxWidth);
+	rightSide = windowWidth-leftSide+"px"
+	leftSide = leftSide+"px"
+
+	leftPanel.css({'min-width': leftSide});
+	leftPanel.css({'max-width': leftSide});
+
+	topRightPanel.css({'min-width': rightSide});
+	topRightPanel.css({'max-width': rightSide});
+
+	bottomRightPanel.css({'min-width': rightSide});
+	bottomRightPanel.css({'max-width': rightSide});
+}
+
+function resizeHeight(e){
+    var dx = h_pos - e.y;
+    h_pos = e.y;
+
+	topSide = Math.min(Math.max((parseInt(getComputedStyle(topRightPanelElement, '').height) - dx), minHeight),maxHeight);
+	bottomSide = (windowHeight-topSide)-0+"px"
+	topSide = topSide+"px"
+
+	topRightPanel.css({'min-height': topSide});
+	topRightPanel.css({'max-height': topSide});
+
+	bottomRightPanel.css({'min-height': bottomSide});
+	bottomRightPanel.css({'max-height': bottomSide});
+}
+
+var resize_el = document.getElementById("resize");
+var resize_h = document.getElementById("resizeHorizontal");
+resize_el.addEventListener("mousedown", function(e){
+    w_pos = e.x;
+    document.addEventListener("mousemove", resizeWidth, false);
+}, false);
+resize_h.addEventListener("mousedown", function(e){
+	h_pos = e.y;
+	document.addEventListener("mousemove", resizeHeight, false);
+}, false);
+document.addEventListener("mouseup", function(){
+    document.removeEventListener("mousemove", resizeWidth, false);
+	document.removeEventListener("mousemove", resizeHeight, false);
+}, false);
+</script>    
+<script>
+codeWindow = document.getElementById("codeWindow");
+
+var myCodeMirror = CodeMirror.fromTextArea(codeWindow, {
+    lineNumbers: true,
+    mode: "python",
+	lineWrapping:true,
+  });
+</script>
+{% endblock %}

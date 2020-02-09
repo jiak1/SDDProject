@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+{% set active_page = "viewCourses" %}
+
+{% block head %}
+<title>Edit Course</title>
+{% endblock %}
+{% block body %}
+<br>
+{% if action=='new' %}
+<h1>Create A New Course:</h1>
+{% else %}
+<div>
+<h1>Edit Course:
+{% if course.public == False %}
+	<a class="btn btn-warning float-right" href="/editCourse?action=show&ID={{course.id}}">Not Released</a>
+{% else %}
+	<a class="btn btn-success float-right" href="/editCourse?action=hide&ID={{course.id}}">Released</a>
+{% endif %}
+</h1></div>
+{% endif %}
+<hr>
+{% include 'notify.html' %}
+<form action="/editCourse?action=update{{extra}}" method="POST" enctype="multipart/form-data">
+	<div class="form-group">
+    	<label>Name</label>
+    	<input type="text" name="name" maxlength="40" class="form-control" value="{{course.name}}">
+  	</div>
+	<div class="form-group">
+    	<label>Description</label>
+    	<textarea class="form-control" name="description" rows="4">{{course.description}}</textarea>
+  	</div>
+	<div class="form-group">
+		{% if action=='edit' %}
+		<label>Current Header:</label>
+		<br>
+		<img src="http://sddmajorproject.jackdonaldson1.repl.co/static?filename={{course.headerImageLocation}}&dir=course_data/{{course.id}}" class="img-fluid img-thumbnail" style="max-height:200px">
+		<br><br>
+		{% endif %}
+		<div class="custom-file">
+  		<input type="file" class="custom-file-input" name="imageUpload">
+  		<label class="custom-file-label" for="customFile">
+		{% if action=='new' %}
+			Choose Header Image
+		{% else %}
+			Change Header Image
+		{% endif %}</label>
+		</div>
+	</div>
+	{% if action=='new' %}
+	<input type="submit" class="btn btn-primary" value="Create Course">
+	{% else %}
+	<input type="submit" class="btn btn-primary" value="Update Course">
+	{% endif %}
+</form>
+<script src="https://cdn.jsdelivr.net/npm/bs-custom-file-input/dist/bs-custom-file-input.js"></script>
+    <script>
+	bsCustomFileInput.init();
+    </script>
+{% endblock %}
