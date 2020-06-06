@@ -10,7 +10,7 @@
 <h1>Enter your details below to login:</h1>
 <hr>
 {% include 'notify.html' %}
-<form action="{{url_for('myApp.loginPage')}}" class="needs-validation" method="POST" novalidate>
+<form action="{{url_for('PageRoutes.loginPage')}}" class="needs-validation" method="POST" novalidate>
 	<div class="form-group">
     	<label>Username</label>
     	<input type="text" name="username" maxlength="20" minlength="4" class="form-control" required>

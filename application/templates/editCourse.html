@@ -12,14 +12,22 @@
 <div>
 <h1>Edit Course:
 {% if course.public == False %}
-	<a class="btn btn-warning float-right" href="/editCourse?action=show&ID={{course.id}}">Not Released</a>
+	<a class="btn btn-lg btn-warning float-right" href="/editCourse?action=show&ID={{course.id}}">Not Released</a>
 {% else %}
-	<a class="btn btn-success float-right" href="/editCourse?action=hide&ID={{course.id}}">Released</a>
+	<a class="btn btn-lg btn-success float-right" href="/editCourse?action=hide&ID={{course.id}}">Released</a>
 {% endif %}
 </h1></div>
 {% endif %}
 <hr>
 {% include 'notify.html' %}
+{% if action != "new" %}
+<div class="btn-toolbar mb-3" role="toolbar" aria-label="Toolbar with button groups">
+  <div class="btn-group mr-2" role="group" aria-label="First group">
+    <button type="button" class="btn btn-primary">Course Details</button>
+    <button type="button" class="btn btn-secondary" onclick="location.href='/editProblems?ID={{course.id}}';">Slides</button>
+  </div>
+  </div>
+{% endif %}
 <form action="/editCourse?action=update{{extra}}" method="POST" enctype="multipart/form-data">
 	<div class="form-group">
     	<label>Name</label>
@@ -46,12 +54,17 @@
 		{% endif %}</label>
 		</div>
 	</div>
+	<br>
 	{% if action=='new' %}
 	<input type="submit" class="btn btn-primary" value="Create Course">
 	{% else %}
 	<input type="submit" class="btn btn-primary" value="Update Course">
 	{% endif %}
 </form>
+<br>
+<hr>
+<br>
+<br>
 <script src="https://cdn.jsdelivr.net/npm/bs-custom-file-input/dist/bs-custom-file-input.js"></script>
     <script>
 	bsCustomFileInput.init();

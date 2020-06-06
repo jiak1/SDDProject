@@ -21,6 +21,51 @@
 - After hours of trying different things i have decided to use javascript to update the size of it. I am currently using flags to check it is runnning through the use of javascripts alert() function which displays a message to the user. It is now running whenever i resize the window.
 - I have finally got it to do the right size i had an issue where it was using .height which didn't include the margins and padding of the scrollbars but i have now fixed that by using .outerHeight()
 
+23/02
+- Did lots of work that i can't be bothered to right down including having to change to juniper notebooks and edit a really long javascript file to get my run button to work.
+- Realised this doesn't have stop functionality so i figured i could just run the library with empty code (BIG BRAINS!)
+- Spent the last hour trying to figure out why it all of a sudden stopped, turns out Ublck Origin was the issue!!!!!!!! Stupid Arndell It
+- Stopped people from being able to edit code when it is running to avoid confusion with functionality
+- Wrote custom theme for codemirror editor to match webpage styling
+- Was procrastinating starting on the problem writing part and decided to instead make the whole website mobile friendly! Actually only ended up taking around two hours.
+- Found a bug with enrolling in courses, meaning that when i was trying to enroll in the second course it was enrolling me in the first. This was caused by my .incourse method checking against the useID not the courseID thus account ID 1 thought it was being enrolled in course 1
+
+4/03/2019
+- Continued working on problem page, trying to get post requests and ajax to work properly.
+- Added reading and writing of courses with new API routes which abstract out stuff real well.
+- Added loading symbol when update button is pressed
+- Had issues positioning the delete button, particularly when over multiple lines.
+- Added delete functionality and fancy animations for the button to appear, made text dissapear cause otherwise it looked disgusting
+
+11/03/2020
+- Decided to completley redo how problems are displayed, allowing more customisability with sections, info slides and quizzes alongside problems. This required a redo of how the selection list was working along with adding order changing functionality through dragging. Ended up using a javascript library SelectJS
+
+15/3
+- Having issues getting an order index column to work for both slides and sections, i need this so i can allow the user to re-order them by dragging. I tried using auto-increment but this requires it to be a primary key which i can't easily change. I have tried to set a variable upon startup equal to the amount of rows, but when you spawn multiple slides quickly they sometime get the same orderIndex which breaks it.
+- Found a solution which just copies the rows value of the primary key, can't believe i didn't think of this sooner!
+- Realised when I was deleting the section it wasn't automatically the slides attached to it, fixed this by first looping through them then deleting them individually.
+
+24/3
+- After a lot of headaches and some time off because of Corona I finally got re-ordering of sections working. This was difficult because the dragging of sections wasn't just a swap but required updating every record in the database.
+
+25/3
+- Decided to try patreon intergration, had lots of interesting issues, particularly trying to ensure the secret was right. Required me to learn about hasing with HMAC and MD5 keys. Tried using some libraries but they didn't work because they were for Python 2. Eventually got figured out how to do it as i now needed to convert it to binary in order to hash.
+
+26/3
+- Split routes.py into APIRoutes.py and PageRoutes.py because it was getting too messy
+
+2/6
+- Spent almost all day working on getting slides to work, now changing type and displaying works.
+- Added ability to embed videos
+
+3/6
+- Working on quiz types and possible answers
+
+4/6
+- Finished single quiz editor, had lots of fun with jQuery
+
+5/6
+- Working on implementing quiz view in the actual course
 MIGRATION COMMANDS
 1) CTRL+SHIFT+P then type open shell
 2) type export FLASK_APP=main

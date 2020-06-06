@@ -1,0 +1,8 @@
+sqlalchemy
+werkzeug
+alembic
+flask
+flask-login
+flask-migrate
+flask-sqlalchemy
+flask-mysqldb

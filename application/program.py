@@ -2,15 +2,17 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from flask_migrate import Migrate
-import os
 
 #PROJECT_ROOT = "sqlite:///"+os.path.dirname(os.path.realpath(__file__))+"/database/data.db"
-PROJECT_ROOT = "mysql://n6s5P256I6:vnCPTna4cH@remotemysql.com/n6s5P256I6"
+PROJECT_ROOT = "mysql+pymysql://sddusername:sddpassword@database-main-serverlist.ctez1f8dx3zl.us-east-2.rds.amazonaws.com/sddmajorproject"
+#PROJECT_ROOT= "mysql://sddusername:sddpassword@db4free.net/sddproject"
+#PROJECT_ROOT = "mysql://jiak1_username:Password@johnny.heliohost.org/jiak1_sddprojectdb"
 
 db = SQLAlchemy()
 login = LoginManager()
-login.login_view = 'myApp.loginPage'
+login.login_view = 'PageRoutes.loginPage'
 migrate = Migrate()
+
 
 def create_app():
 	"""Construct the core application."""
@@ -23,13 +25,14 @@ def create_app():
 	db.init_app(app)
 	login.init_app(app)
 
-
 	migrate.init_app(app, db)
 
 	with app.app_context():
 		# Import
-		from .routes import myApp
-		app.register_blueprint(myApp)
+		from .PageRoutes import PageRoutes
+		from .APIRoutes import apiRoutes
+		app.register_blueprint(PageRoutes)
+		app.register_blueprint(apiRoutes)
 
 		# Create tables for our models
 		db.create_all()

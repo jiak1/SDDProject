@@ -3,7 +3,13 @@
 
 {% block head %}
 <title>{{course.name}}</title>
-<link rel="stylesheet" type="text/css" href="http://sddmajorproject.jackdonaldson1.repl.co/static?filename=courseStyle.css&dir=styles/">
+<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='styles/courseStyle.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='codemirror/lib/codemirror.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='styles/customCodeMirrorTheme.css') }}">
+
+
+<link rel="stylesheet" type="text/css" href="{{url_for('static',filename='highlight/tomorrow.css')}}">
+<link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/quill/1.3.7/quill.core.min.css">
 {% endblock %}
 
 {% block beforeBody %}
@@ -12,104 +18,164 @@
 {% block body %}
 </div>
 <div class="overlay"></div>
-<nav id= "secondNav" class="navbar navbar-expand navbar-dark bg-secondary flex-nowrap">
-    <button class="navbar-toggler mr-2" type="button" data-toggle="collapse" data-target="#navbar5">
-        <span class="navbar-toggler-icon"></span>
-    </button>
-    <span><button type="button" id="sidebarCollapse" style="color:white;padding: 0;border: none;background: none;"><i class="fas fa-align-left"></i></button></span>
+<nav id= "secondNav" class="navbar navbar-expand bg-light flex-nowrap" style="background-color:#e5e5e5!important">
+	<div class="navbar-collapse collapse w-100 order-1 order-md-0 dual-collapse2">
+		<button class="navbar-toggler mr-2" type="button" data-toggle="collapse" data-target="#navbar5">
+			<span class="navbar-toggler-icon"></span>
+		</button>
 
-    <div class="navbar-collapse collapse justify-content-center" id="navbar5">
-        <ul class="navbar-nav mx-auto">
-			<button style="color:white;padding: 0;border: none;background: none;" type="submit"><i class="fas fa-arrow-left"></i></button>
-            <li class="nav-item">
-                <a class="nav-link active" style="text-align:center">Problem Name</a>
-            </li>
-			<button style="color:white;padding: 0;border: none;background: none;" type="submit"><i class="fas fa-arrow-right"></i></button>
-        </ul>
+		<span><button type="button" id="sidebarCollapse" style="" class="SpecialButton"><i class="fas fa-align-left"></i></button></span>
+	</div>
+
+    <div class="mx-auto order-2" id="navbar5" style="">
+        <div class="navbar-nav mx-auto">
+			<button style="color:#495057;padding: 0;padding-left:10px;border: none;background: none;" type="submit" id="PreviousProblem"><i class="fas fa-arrow-left"></i></button>
+            <a class="nav-link active" style="text-align:center;white-space:nowrap" id="ProblemName">Problem Name</a>
+			<button style="color:#495057;padding: 0;padding-right:10px;border: none;background: none;" type="submit" id="NextProblem"><i class="fas fa-arrow-right"></i></button>
+        </div>
     </div>
 
 
-	<div>
-		<button style="color:white;padding: 0;border: none;background: none;" type="submit"><i class="fas fa-play"></i> Play</button>
-		&nbsp&nbsp
-		<button style="color:white;padding: 0;border: none;background: none;" type="submit"><i class="fas fa-save"></i> Save</button>
-		&nbsp&nbsp
-		<button style="color:white;padding: 0;border: none;background: none;" type="submit"><i class="fas fa-highlighter"></i> Mark</button>
+	<div class="navbar-collapse collapse w-100 order-3 dual-collapse2">
+		<div class="navbar-nav ml-auto">
+		<div id="CodingButtons">
+			<button style="" type="submit" id="RunCode" class="SpecialButton"><i class="fas fa-play"></i> Run&nbsp&nbsp</button>
+			<button style="display:none" type="submit" id="StopCode" class="SpecialButton"><i class="fas fa-stop"></i> Stop&nbsp&nbsp</button>
+			<button style="" type="submit" id="SaveButton" class="SpecialButton"><i class="fas fa-save"></i> Save&nbsp&nbsp</button>
+			<button style="" type="submit" id="MarkButton" class="SpecialButton"><i class="fas fa-highlighter"></i> Mark</button>
 		</div>
+		</div></div>
     </div>
 </nav>
 
     <div class="wrapper">
         <!-- Sidebar  -->
         <nav id="sidebar">
-			<div class="container" style="padding-top:12.5px">
-			<div><button type="button" class="close close-btn" style="color:#FFFFFF;opacity:1;" data-dismiss="modal" aria-label="Close" id="dismiss">&times;</button>
-			<h5 style="display:inline">{{course.name}}</h5>
-			<p style="margin-top:10px">Created by Jack Donaldson</p>
-			<hr style="background-color:white"></div>
+			<div class="container" style="padding-top:12.5px;margin-bottom:100px">
+				<div id="">
+				<button type="button" class="close close-btn" style="color: #343a40;opacity:1;" data-dismiss="modal" aria-label="Close" id="dismiss">&times;</button>
+				<h5 style="display:inline">{{course.name}}</h5>
+				<p style="margin-top:10px">Created by Jack Donaldson</p>
+				<hr style="background-color: #343a40;margin-bottom:6px">
+				{% for section in course.sections %}
+					<h5 class="SectionTitle">{{section.name}}</h5>
+					{% for slide in section.slides %}
+						<a href="#" class="NoHoverLink"><h7 class="SlideTitle">{{slide.name}}</h7></a><br>
+					{% endfor %}
+				{% endfor %}
+			</div>
 
 			</div>
         </nav>
 
     </div>
 
-	<div class="container-fluid">
-	<div class="row" id ="problemView">
-		<div class="col-8" id ="leftPanel" style="background:#e0e0e0"><div id="resize"></div>OTHER AREA</div>
-		<div class="col-4">
-			<div class="d-flex flex-column">
-				<div class="row">
-				<div class="text-white" id ="topRightPanel"  style="background:#343a40">
-					<textarea class="overflow-auto" id="codeWindow" style="min-height:inherit;max-height:inherit;min-width:inherit;max-width:inherit;padding:5px;color:white;background-color:#ff000000">Enter your code here... </textarea>
+	<div class="container-fluid" id="CodingSection">
+	<div class="row problemView">
+			<div class="col-8" id ="leftPanel" style="background:white"><div id="resize"></div>
+			<div class="TopDiv ql-editor" id="CodingExplanation"></div>
+			</div>
+			<div class="col-4" id="rightPanel" style="background:black">
+					<pre data-executable>print("test")</pre>
+			</div>
+	</div>
+	</div>
+
+	<div id="NormalSection">
+	<div class="row problemView">
+		<div class="col-12 mainSection">
+			<div class="CenteringDiv">
+			<div class="container-info container-sm">
+				<div class="CenterVid">
+					<iframe class="trailerFrame" max-width="560" max-height="315" src="https://www.youtube.com/embed/XMzSeYo1X6A" frameborder="0" allow="modestbranding" allowfullscreen></iframe>
 				</div>
-				</div>
-				<div class="row">
-				<div class="text-white" id ="bottomRightPanel"  style="background:black;position:relative"><div id="resizeHorizontal"></div>
-				<div class="overflow-auto" style="max-height:inherit;padding:5px"> This is some sample text to make it look like this part is working.
-				Beep booop!</div></div></div>
-				</div>
+				<div class="TopDiv ql-editor" id="NormalExplanation">
+			</div>
+			</div>
 			</div>
 		</div>
 	</div>
 	</div>
 
-<div>
+	<div id="QuizSection">
+	<div class="row problemView">
+		<div class="col-12 mainSection">
+			<div class="CenteringDiv">
+			<div class="CenterText container-sm">
+				<div class="TopDiv ql-editor" id="QuizExplanation"></div>
+			</div>
+			<div class="container-sm">
+				<div class="row row-quiz" style="text-align:center" id="QARow">
+				</div>
+				<button type="button" class="btn btn-dark" id="MarkQuiz">Submit Answer</button>
+			</div>
+			</div>
+		</div>
+	</div>
+	</div>
+
+<div class="modal fade" id="inModal" tabindex="-1" role="dialog" data-backdrop="static">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="exampleModalLabel">Response Required</h5>
+      </div>
+      <div class="modal-body">
+        <form>
+          <div class="form-group">
+            <label for="recipient-name" class="col-form-label">Prompt:</label>
+            <p id="promptString">Random prompt</p>
+          </div>
+          <div class="form-group">
+            <label for="message-text" class="col-form-label">Enter A Response:</label>
+            <input class="form-control" id="promptResponse" onkeypress="return noenter()"></input>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" data-dismiss="modal" id="responseSubmit">Send Response</button>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="{{ url_for('static', filename='juniper/juniper.min.js') }}"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/malihu-custom-scrollbar-plugin/3.1.5/jquery.mCustomScrollbar.concat.min.js"></script>
 <script type="text/javascript">
+function closeSidebar(){
+    $('#sidebar').removeClass('active');
+    $('.overlay').removeClass('active');
+}
+
+function showSidebar(){
+    $('#sidebar').addClass('active');
+    $('.overlay').addClass('active');
+    $('.collapse.in').toggleClass('in');
+    $('a[aria-expanded=true]').attr('aria-expanded', 'false');
+}
         $(document).ready(function () {
             $("#sidebar").mCustomScrollbar({
-                theme: "minimal"
+				axis:"y"
             });
 
             $('#dismiss, .overlay').on('click', function () {
-                $('#sidebar').removeClass('active');
-                $('.overlay').removeClass('active');
+                closeSidebar();
             });
 
             $('#sidebarCollapse').on('click', function () {
-                $('#sidebar').addClass('active');
-                $('.overlay').addClass('active');
-                $('.collapse.in').toggleClass('in');
-                $('a[aria-expanded=true]').attr('aria-expanded', 'false');
+                showSidebar();
             });
         });
-    </script>
-<script>
+
+var selectedAnswer = -1;
+var currentQuestionsList = ""
+var currentProblemID = 0;
 var w_pos;var h_pos;
-updateSizes();
+var quizMarked = false
 
-leftPanel = $("#leftPanel")
-leftPanelElement = document.getElementById("leftPanel");
-
-topRightPanel = $("#topRightPanel")
-topRightPanelElement = document.getElementById("topRightPanel");
-
-bottomRightPanel = $("#bottomRightPanel")
-bottomRightPanelElement = document.getElementById("bottomRightPanel");
-
-updateSizes();
-setupDefault();
-
+function forceCodingWindowView(){
+	updateSizes();
+	setupDefault();
+}
 
 window.onresize = function(event) {
     updateSizes();
@@ -117,12 +183,36 @@ window.onresize = function(event) {
 }
 
 window.onload = function(event) {
+	getElements();
     updateSizes();
+	setupMovement();
 	setupDefault();
+
+	//Go again to ensre width is right
+	updateSizes();
+	setupDefault();
+}
+function getElements(e){
+	leftPanel = $("#leftPanel");
+	leftPanelElement = document.getElementById("leftPanel");
+
+	topRightPanel = $(".juniper-input");
+	topRightPanelElement = document.getElementsByClassName("juniper-input")[0];
+	
+	bottomRightPanel = $(".juniper-output");
+	bottomRightPanelElement = document.getElementsByClassName("juniper-output")[0];
+
+	rightPanel = $("#rightPanel");
+
+	var sh = document.createElement('div');
+	sh.id='resizeHorizontal';
+	bottomRightPanelElement.appendChild(sh)
+
+	$(".CodeMirror").css({"min-height":'inherit',"max-height":"inherit"});
 }
 
 function updateSizes(){
-	windowWidth = $(window).width();
+	windowWidth = $(".problemView").width();
 	nvh = $('#mainNav').outerHeight(true);
 	nvh2 = $('#secondNav').outerHeight(true);
     vpw = $(window).width();
@@ -134,25 +224,25 @@ function updateSizes(){
 
 	minHeight= windowHeight*0.45
 	maxHeight = windowHeight*0.7
+	
+	rightPanel.css({'min-height': windowHeight + 'px'});
+	rightPanel.css({'max-height': windowHeight + 'px'});
 
-	$('#problemView').css({'min-height': windowHeight + 'px'});
-	$('#problemView').css({'max-height': windowHeight + 'px'});
+	$('.problemView').css({'min-height': windowHeight + 'px'});
+	$('.problemView').css({'max-height': windowHeight + 'px'});
 
 }
 
 function setupDefault(){
 	leftSide = windowWidth/2;
-	rightSide = windowWidth-leftSide+"px"
+	rightSide = windowWidth-leftSide-0+"px"
 	leftSide = leftSide+"px"
 
 	leftPanel.css({'min-width': leftSide});
 	leftPanel.css({'max-width': leftSide});
 
-	topRightPanel.css({'min-width': rightSide});
-	topRightPanel.css({'max-width': rightSide});
-
-	bottomRightPanel.css({'min-width': rightSide});
-	bottomRightPanel.css({'max-width': rightSide});
+	rightPanel.css({'min-width': rightSide});
+	rightPanel.css({'max-width': rightSide});
 
 	setupDefaultHeight();
 }
@@ -170,6 +260,9 @@ function setupDefaultHeight(){
 
 	leftPanel.css({'min-height': windowHeight});
 	leftPanel.css({'max-height': windowHeight});
+
+	rightPanel.css({'min-height': windowHeight});
+	rightPanel.css({'max-height': windowHeight});
 }
 
 function resizeWidth(e){
@@ -177,17 +270,14 @@ function resizeWidth(e){
     w_pos = e.x;
 
 	leftSide = Math.min(Math.max((parseInt(getComputedStyle(leftPanelElement, '').width) - dx), minWidth),maxWidth);
-	rightSide = windowWidth-leftSide+"px"
+	rightSide = windowWidth-leftSide-0+"px"
 	leftSide = leftSide+"px"
 
 	leftPanel.css({'min-width': leftSide});
 	leftPanel.css({'max-width': leftSide});
 
-	topRightPanel.css({'min-width': rightSide});
-	topRightPanel.css({'max-width': rightSide});
-
-	bottomRightPanel.css({'min-width': rightSide});
-	bottomRightPanel.css({'max-width': rightSide});
+	rightPanel.css({'min-width': rightSide});
+	rightPanel.css({'max-width': rightSide});
 }
 
 function resizeHeight(e){
@@ -204,29 +294,330 @@ function resizeHeight(e){
 	bottomRightPanel.css({'min-height': bottomSide});
 	bottomRightPanel.css({'max-height': bottomSide});
 }
+function setupMovement(e){
+	var resize_el = document.getElementById("resize");
+	var resize_h = document.getElementById("resizeHorizontal");
+	resize_el.addEventListener("mousedown", function(e){
+		w_pos = e.x;
+		document.addEventListener("mousemove", resizeWidth, false);
+	}, false);
+	resize_h.addEventListener("mousedown", function(e){
+		h_pos = e.y;
+		document.addEventListener("mousemove", resizeHeight, false);
+	}, false);
+	document.addEventListener("mouseup", function(){
+		document.removeEventListener("mousemove", resizeWidth, false);
+		document.removeEventListener("mousemove", resizeHeight, false);
+	}, false);
+}
 
-var resize_el = document.getElementById("resize");
-var resize_h = document.getElementById("resizeHorizontal");
-resize_el.addEventListener("mousedown", function(e){
-    w_pos = e.x;
-    document.addEventListener("mousemove", resizeWidth, false);
-}, false);
-resize_h.addEventListener("mousedown", function(e){
-	h_pos = e.y;
-	document.addEventListener("mousemove", resizeHeight, false);
-}, false);
-document.addEventListener("mouseup", function(){
-    document.removeEventListener("mousemove", resizeWidth, false);
-	document.removeEventListener("mousemove", resizeHeight, false);
-}, false);
-</script>    
-<script>
-codeWindow = document.getElementById("codeWindow");
+new Juniper({ 
+	repo: 'jiak1/SDDMajorProjectJuniper',
+	msgLoading:"",
+	msgError:"There was an error trying to run your code. Please try again.",
+	theme: 'customCodeMirrorTheme'})
 
-var myCodeMirror = CodeMirror.fromTextArea(codeWindow, {
-    lineNumbers: true,
-    mode: "python",
-	lineWrapping:true,
-  });
+	var cm = document.querySelector(".CodeMirror").CodeMirror;
+	cm.setOption("lineNumbers",true);
+	cm.setOption("matchBrackets",true);
+	cm.setOption("lineWrapping",true);
+	cm.setOption("indentUnit",2);
+
+	var fails = 0;
+	var forced = false;
+	var weWantToStop = false;
+
+	playButton = document.getElementById("RunCode");
+	stopButton = document.getElementById("StopCode");
+	markButton = document.getElementById("MarkButton");
+	saveButton = document.getElementById("SaveButton");
+
+	playButton.addEventListener('click', e => {
+		if (forced == false){
+			fails=0;
+			startRunning();
+		}else{
+			forced=false;
+		}
+	});
+
+	stopButton.addEventListener('click', e => {
+		disableJuniper();
+		weWantToStop = true;
+	});
+
+	// listen to status updates
+    document.addEventListener('juniper', ev =>{
+		if(ev.detail.status == "failed"){
+			fails = fails+1;
+			if (fails <=3 ){
+				forced = true;
+				playButton.dispatchEvent(new Event('click', { 'bubbles': true}));
+
+			}else{
+				stopRunning();
+			}
+		}
+    	console.log('Status:', ev.detail.status)
+	})
+
+	document.addEventListener('kernal-connected', ev =>{
+		if(weWantToStop){
+		stopRunning();
+		weWantToStop=false;
+		}
+	})
+	
+	function startRunning(){
+		cm.setOption("readOnly",true);
+		playButton.disabled = true;
+		markButton.disabled = true;
+		saveButton.disabled = true;
+		stopButton.disabled=false;
+		$("#StopCode").css({"display":"inline-block"});
+	}
+
+	function disableJuniper(){
+		stopButton.disabled=true;
+		oldCode = cm.getValue();
+		cm.setValue("print('Program Terminated.')");
+		forced = true;
+		playButton.dispatchEvent(new Event('click', { 'bubbles': true}));
+		cm.setValue(oldCode);
+	}
+	function stopRunning(){
+		cm.setOption("readOnly",false);
+		playButton.disabled = false;
+		markButton.disabled = false;
+		saveButton.disabled = false;
+		$("#StopCode").css({"display":"none"});
+	}
+
+MutationObserver = window.MutationObserver || window.WebKitMutationObserver;
+
+var observer = new MutationObserver(function(mutations, observer) {
+setTimeout(() => {
+    customList = document.getElementsByClassName("jp-Stdin-prompt");
+	for (i = 0; i < customList.length; i++) {
+		var prompt = customList[i];
+		if(prompt != null && prompt.innerHTML != ""){
+			p = prompt.innerHTML.split("<")[0];
+			prompt.innerHTML="";
+			$("#promptResponse").val("")
+			$("#promptString").text(p);
+			$("#inModal").modal({
+				keyboard: false,
+				backdrop:'static',
+				focus:true
+			})
+		}
+	}
+},500);
+});
+
+$('#inModal').on('hide.bs.modal', function (e) {
+  response = $("#promptResponse").val();
+
+  $(".jp-Stdin-input").val(response);
+  $(".jp-Stdin-input").submit();
+
+  var e = jQuery.Event("keydown");
+  e.which = 13; //choose the one you want
+  e.keyCode = 13;
+  $(".jp-Stdin-input").trigger(e);
+})
+
+document.getElementById("SaveButton").onclick = function(){
+	var e = jQuery.Event("keydown");
+	e.which = 13; //choose the one you want
+	e.keyCode = 13;
+	$(".jp-Stdin-input").trigger(e);
+};
+
+// define what element should be observed by the observer
+// and what types of mutations trigger the callback
+observer.observe(document.getElementsByClassName("juniper-output")[0], {
+  subtree: true,
+  attributes: true,
+  childList:true
+});
+
+function hideAllSections(){
+	$("#CodingSection").hide();
+	$("#CodingButtons").hide();
+	$("#NormalSection").hide();
+	$("#NormalExplanation").hide();
+	$("#QuizSection").hide();
+	$("#QuizExplanation").hide();
+	$(".CenterVid").hide();
+	selectedAnswer = -1;
+	quizMarked = false
+}
+
+function changeProblems(problemID){
+	if(currentProblemID == problemID){return}
+	var _data = {}
+	$.ajax({
+		type: "POST",
+		url: "api/GetSlide?ID={{course.id}}&PROBLEMNUM="+problemID,
+		data: JSON.stringify(_data),
+		contentType: "application/json; charset=utf-8",
+		dataType: "json",
+		success: function(data){
+			$("#ProblemName").text(data['name']);
+
+			hideAllSections();
+			if(data['type'] == "Coding"){
+				$("#CodingExplanation").html(data['explanation'])
+				$("#CodingSection").show();
+				$("#CodingButtons").show();
+				forceCodingWindowView();
+			}else if(data['type'] == "Info"){
+				$("#NormalExplanation").html(data['explanation'])
+				$("#NormalExplanation").show();
+				$("#NormalSection").show();
+			}else if(data['type'] == "Quiz"){
+				$("#QuizSection").show();
+				$("#QuizExplanation").show();
+				$("#QuizExplanation").html(data['explanation'])
+				loadQuizPrompts(data['possibleAnswers'])
+
+			}else if(data['type'] == "Video"){
+				$("#NormalExplanation").html(data['explanation'])
+				$("#NormalExplanation").show();
+				$("#NormalSection").show();
+				$("#trailerFrame").attr('src', "https://www.youtube.com/embed/"+data['video'])
+				$(".CenterVid").show();
+				
+			}else if(data['type'] == "Question Bank"){
+
+			}
+
+			if(data['hasPrevious']){
+				$('#PreviousProblem').prop('disabled', false);
+			}else{
+				$('#PreviousProblem').prop('disabled', true);
+			}
+
+			if(data['hasNext']){
+				$('#NextProblem').prop('disabled', false);
+			}else{
+				$('#NextProblem').prop('disabled', true);
+			}
+
+			currentProblemID = problemID
+		},
+		failure: function(errMsg) {
+
+    	}
+	});
+}
+
+$("#PreviousProblem").click(function() {
+	changeProblems(currentProblemID-1)
+});
+
+$("#NextProblem").click(function() {
+	changeProblems(currentProblemID+1)
+});
+
+$('.SlideTitle').each(function(i, obj) {
+    $(this).click(function(){
+		changeProblems(i+1); 
+	});
+});
+
+hideAllSections();
+changeProblems(1);
+
+function loadQuizPrompts(quizPrompts){
+	currentQuestionsList = quizPrompts
+	$("#QARow").empty()
+	var questionsList = currentQuestionsList.split("~")
+
+	for (var i = 0; i < questionsList.length; i++) {
+		$("#QARow").append('<div class="col radio-col" id="QANUM'+i+'"><input type="radio" name="quizradio" value="'+i+'" class="quiz-answer" id="QARADIO'+i+'"><p class="QuizText">'+questionsList[i]+'</p></div>');
+
+		$("#QANUM"+i).click(function() {
+			var num = $(this).attr("id").split("NUM")[1]
+
+			$("#QARADIO"+num).prop("checked", true);
+			$("#QARADIO"+num).trigger("change")
+		});
+
+		$("#QANUM"+i).change(function() {
+			//Clear all others
+			$(".radio-col").each(function(i, obj){
+				$(this).css({"background-color":"","color":""})
+			})
+
+			var num = $(this).attr("id").split("NUM")[1]
+			selectedAnswer = num
+
+			if($("#QARADIO"+num).is(':checked')) { 
+				$("#QANUM"+num).css({"background-color":"#343a40","color":"white"})
+			}
+		});
+	}
+}
+
+function MarkQuiz(){
+	if(selectedAnswer == -1){ alert("Please Select An Answer!");return}
+	if(quizMarked){return}
+	
+	startMarking()
+	var _data = {}
+	$.ajax({
+		type: "POST",
+		url: "api/CheckQuizAnswer?ID={{course.id}}&PROBLEMNUM="+currentProblemID,
+		data: JSON.stringify(_data),
+		contentType: "application/json; charset=utf-8",
+		dataType: "json",
+		success: function(data){
+			var correctAnswers = data['correctAnswers'].split("~")
+			var failed = false
+			$(".quiz-answer").each(function(i, obj){
+				if(correctAnswers[i] == "Y"){
+					$("#QANUM"+i).css({"background-color":"rgb(20, 151, 66)","color":"white"})
+				}else if(correctAnswers[i] == "N" && selectedAnswer == i) {
+					failed = true
+					$("#QANUM"+i).css({"background-color":"rgb(202, 46, 46)","color":"white"})
+				}
+			})
+
+			$(".quiz-answer").each(function(i, obj){
+				$(this).prop('disabled', true);
+			})
+
+			$(".radio-col").each(function(i, obj){
+				$(this).off()
+			})
+			quizMarked = true
+
+			endMarking();
+		},
+		failure: function(errMsg) {
+			endMarking();
+    	}
+	});
+
+}
+
+function startMarking(){
+	var loading = document.createElement("span");
+	loading.className = "spinner-border spinner-border-sm"
+
+	var updateBtn = document.getElementById("MarkQuiz")
+	updateBtn.innerHTML = "Submitting... "
+	updateBtn.appendChild(loading);
+}
+
+function endMarking(){
+	var updateBtn = document.getElementById("MarkQuiz")
+	updateBtn.innerHTML = "Submit Answer"
+}
+
+$("#MarkQuiz").click(MarkQuiz)
 </script>
+<div>
 {% endblock %}

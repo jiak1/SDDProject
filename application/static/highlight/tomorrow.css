@@ -1,0 +1,41 @@
+.hljs,pre {
+	font-size: 15px;
+	line-height: 1.5em;
+	font-family: inconsolata, monospace;
+	letter-spacing: 0.3px;
+	font-weight:600;
+	word-spacing: 1px;
+}
+
+.hljs,.hljs-tag,.hljs-subst {
+}
+
+.hljs-strong,.hljs-emphasis {
+}
+
+.hljs-bullet,.hljs-quote,.hljs-number,.hljs-regexp,.hljs-literal,.hljs-link {
+}
+
+.hljs-code,.hljs-title,.hljs-section,.hljs-selector-class {
+    color: #a6e22e
+}
+
+.hljs-keyword,.hljs-selector-tag,.hljs-name,.hljs-attr {
+    color: #dc3545
+}
+
+.hljs-symbol,.hljs-attribute {
+	color:#17a2b8;
+}
+
+.hljs-params,.hljs-class .hljs-title {
+    color: black;
+}
+
+.hljs-string,.hljs-type,.hljs-built_in,.hljs-builtin-name,.hljs-selector-id,.hljs-selector-attr,.hljs-selector-pseudo,.hljs-addition,.hljs-variable,.hljs-template-variable {
+    color: #28a745;
+}
+
+.hljs-comment,.hljs-deletion,.hljs-meta {
+    color: #fd7e14;
+}

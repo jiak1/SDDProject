@@ -1,0 +1,79 @@
+.cm-s-customCodeMirrorTheme {
+	font-size: 1em;
+	line-height: 1.5em;
+	font-family: inconsolata, monospace;
+	letter-spacing: 0.3px;
+	font-weight:600;
+	word-spacing: 1px;
+
+	color: black;
+}
+.cm-s-customCodeMirrorTheme .CodeMirror-lines {
+	padding: 8px 0;
+}
+.cm-s-customCodeMirrorTheme .CodeMirror-gutters {
+  border-right: 1px solid #ddd;
+  margin-right:2px;
+  background-color: #f7f7f7;
+  white-space: nowrap;
+}
+.cm-s-customCodeMirrorTheme .CodeMirror-guttermarker { color: black; }
+.cm-s-customCodeMirrorTheme .CodeMirror-guttermarker-subtle { color: #999; }
+
+.cm-s-customCodeMirrorTheme div.CodeMirror-cursor {
+  border-left: 1px solid black;
+  border-right: none;
+  width: 0;
+}
+.cm-s-customCodeMirrorTheme .CodeMirror-activeline-background {
+	background: #e8f2ff;
+}
+.cm-s-customCodeMirrorTheme .CodeMirror-selected {
+	background: #d9d9d9;
+}
+.cm-s-customCodeMirrorTheme .cm-comment {
+	color: #fd7e14;
+}
+.cm-s-customCodeMirrorTheme .cm-string {
+	color: #28a745;
+	
+}
+.cm-s-customCodeMirrorTheme .cm-number {
+	color: #343a40;
+}
+.cm-s-customCodeMirrorTheme .cm-atom {
+	color:#17a2b8;
+	
+}
+.cm-s-customCodeMirrorTheme .cm-keyword {
+	color: #dc3545;
+	
+}
+.cm-s-customCodeMirrorTheme .cm-variable {
+	color: #343a40;
+}
+.cm-s-customCodeMirrorTheme .cm-def {
+	color: #343a40;
+}
+.cm-s-customCodeMirrorTheme .cm-builtin {
+	color: #6f42c1;
+	
+}
+.cm-s-customCodeMirrorTheme .cm-variable-2 {
+	color: #dc3545;
+	
+}
+.cm-s-customCodeMirrorTheme .cm-property {
+	color:#17a2b8;
+	
+}
+.cm-s-customCodeMirrorTheme .cm-operator {
+	color:  #343a40;
+}
+.cm-s-customCodeMirrorTheme .CodeMirror-linenumber {
+  padding: 0 3px 0 5px;
+  min-width: 20px;
+  text-align: right;
+  color: #999;
+  white-space: nowrap;
+}

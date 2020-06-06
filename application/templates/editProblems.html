@@ -1,0 +1,752 @@
+{% extends 'base.html' %}
+{% set active_page = "viewCourses" %}
+
+{% block head %}
+<title>Edit Course</title>
+
+<link rel="stylesheet" href="{{url_for('static',filename='highlight/tomorrow.css')}}">
+<link rel="stylesheet" href="//cdn.quilljs.com/1.3.6/quill.snow.css">
+<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='styles/courseStyle.css') }}">
+
+
+{% endblock %}
+
+{% block beforeBody %}
+<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+<script src="{{ url_for('static', filename='javalib/Sortable.min.js') }}"></script>
+<script src="//cdn.quilljs.com/1.3.6/quill.min.js"></script>
+
+{% endblock %}
+
+{% block body %}
+<div id="TopSection">
+<br>
+{% if action=='new' %}
+<h1>Create A New Course:</h1>
+{% else %}
+<div>
+<h1>Edit Course:
+{% if course.public == False %}
+	<a class="btn btn-lg btn-warning float-right" href="/editCourse?action=show&ID={{course.id}}">Not Released</a>
+{% else %}
+	<a class="btn btn-lg btn-success float-right" href="/editCourse?action=hide&ID={{course.id}}">Released</a>
+{% endif %}
+</h1></div>
+{% endif %}
+<hr>
+{% include 'notify.html' %}
+<div class="btn-toolbar mb-3 justify-content-between" role="toolbar" aria-label="Toolbar with button groups">
+  <div class="btn-group mr-2" role="group" aria-label="First group">
+    <button type="button" class="btn btn-secondary" onclick="location.href='/editCourse?action=edit&ID={{course.id}}';">Course Details</button>
+    <button type="button" class="btn btn-primary">Slides</button>
+  </div>
+	<div style="">
+	<button type="button" class="btn btn-dark" id="NewSection" style="">New Section</button>
+	<button type="button" class="btn btn-dark" id="NewProblem" style="">New Slide</button>
+    </div>
+  </div></div>
+
+
+<div class="row">
+  <div class="col">
+    <div class="list-group list-sortable" id="list-tab" role="tablist">
+	{% for section in course.sections %}
+		<div class="nested-1 list-group-item list-group-item-action" style="border-top-width: 1px;" id="ListSection{{section.id}}" >
+		{{section.name}}
+		<div class="nested-2 list-group list-sortable" id="ListChildSection{{section.id}}"> 
+		{% for slide in section.slides %}
+    		<a class="list-group-item list-group-item-action problemText" id="pList{{section.id}}-{{slide.id}}" data-toggle="list" role="tab" href="#" aria-controls="home"><div id="pListDiv{{section.id}}-{{slide.id}}" style="border-top-width: 1px;"><div id="pListText{{section.id}}-{{slide.id}}">{{slide.name}}</div></div></a>
+		{% endfor %}
+		</div></div>
+	{% endfor %}
+    </div>
+  </div>
+  <div class="col-8">
+	  <div id="slideEditorPane" style="opacity:0">
+		<div class="form-group">
+			<label for="slideType">Slide Type:</label>
+			<div class="input-group">
+			<select class="form-control" id="slideType">
+				<option>Info</option>
+				<option>Quiz</option>
+				<option>Coding</option>
+				<option>Video</option>
+				<option>Question Bank</option>
+			</select>
+			<button class="btn btn-warning mb-2" style="margin-left: 20px;" onclick="saveProblem()" id="UpdateButton">Update</button>
+		</div>
+		</div>
+	  <label for="pNameInput">Slide Name:</label>
+	  <div class="input-group">
+		  <input type="text" class="form-control" id="pNameInput" placeholder="" maxlength="30">
+	  </div>
+	  <br>
+	  <div id="videoSection">
+		<label for="pNameInput">Slide Video:</label>
+		<div class="input-group">
+			<div class="input-group-prepend">
+			<div class="input-group-text">youtube.com/watch?v=</div>
+			</div>
+			<input type="text" class="form-control" id="pVideoInput" name="trailer" placeholder="" maxlength="50">
+		</div>
+	  	<br>
+	  </div>
+	  <label for="pEditor">Slide Explanation:</label>
+	  <div id="pEditor">
+		  <div id="toolbar">
+		  </div>
+	  </div>
+	  <br>
+	  <div id="answersSection">
+		<label for="pNameInput" style="margin-bottom: 10px;">Quiz Answers:</label>
+		<br>
+		<div class="" id="QuizAnswers">
+		</div>
+		<button type="button" class="btn btn-success" id="AddAnswer">Add Answer</button>
+	  	<br>
+	  </div>
+	  </div>
+	  	  <div id="sectionEditorPane" style="opacity:0">
+	  <label for="sectionNameInput">Section Name:</label>
+	  <div class="input-group">
+		  <input type="text" class="form-control" id="sectionNameInput" placeholder="" maxlength="30">
+		  <button class="btn btn-warning mb-2" style="margin-left: 10px;" onclick="saveSection()" id="SectionUpdateButton">Update</button>
+		  <button class="btn btn-danger mb-2" style="margin-left: 10px;" onclick="deleteSection()" id="SectionDeleteButton">Delete Section</button>
+	  </div>
+	  </div>
+  </div>
+  <div class="row">
+	  <div class="col">
+		  <div id="showcase">
+		  </div>
+	  </div>
+  </div>
+</div>
+<div id="BottomSection">
+<br>
+<hr>
+</div>
+<script>
+	var editor;
+
+	var toolbarOptions = [
+		[{ 'font':[]},{'size': [] }],
+		['bold', 'italic', 'underline', 'strike'],// toggled buttons
+		['blockquote', 'code-block'],
+
+		[{ 'list': 'ordered'}, { 'list': 'bullet' }],
+		[{ 'script': 'sub'}, { 'script': 'super' }],
+		[{ 'indent': '-1'}, { 'indent': '+1' }],
+		[{ 'direction': 'rtl' }],     // text direction
+
+		['link','image','formula'],
+
+		[{ 'color': [] }, { 'background': [] }],
+		[{ 'align': [] }],
+		['clean'] 
+	];
+	var options = {
+		debug: false,
+		modules: {
+			syntax:true,
+			toolbar:toolbarOptions,
+
+		},
+		placeholder: 'Start writing a problem...',
+		readOnly: false,
+		theme: 'snow'
+	};
+	hljs.configure({ 
+		languages: ['python']
+	});
+	hljs.initHighlightingOnLoad();
+
+	document.getElementById("NewProblem").addEventListener("click", newProblem);
+	document.getElementById("NewSection").addEventListener("click", newSection);
+	
+	currentSlideID = 0;
+	currentSectionID = 0;
+	currentSlideType = "";
+
+	var sectionCount = {{course.sections|length}}
+	updatedSectionCount();
+
+	var currentCorrectAnswers = ""
+	var currentAnswersList = "";
+	var currentPID = -1;
+	var courseID = {{course.id}}
+	var prevHoverEle = null;
+
+	function updatedSectionCount(){
+		if(sectionCount <= 0){
+			$("#NewProblem").prop("disabled", true);
+		}else{
+			$("#NewProblem").prop("disabled", false);
+		}
+	}
+
+	function newProblem() {
+      var posting = $.post( "editProblems?ID={{course.id}}&action=NewProblem" );
+
+      /* Alerts the results */
+      posting.done(function( response ) {
+		var newP = document.createElement("a");
+		newP.className = "list-group-item list-group-item-action"; 
+		//response = jQuery.parseJSON(data)
+		sideID = response["slideid"];
+		sectionID = response["sectionid"];
+		var element = document.getElementById("ListChildSection"+sectionID);
+
+		element.appendChild(newP);
+
+		var d1 = document.createElement("div");
+		d1.id="pListDiv"+sectionID+"-"+sideID;
+		newP.appendChild(d1);
+
+		var d2 = document.createElement("div");
+		d2.id="pListText"+sectionID+"-"+sideID;
+		d2.innerHTML="New Problem"
+		d1.appendChild(d2);
+
+		newP.id="pList"+sectionID+"-"+sideID
+		$("#pList"+sectionID+"-"+sideID).attr("data-toggle", "list");
+		$("#pList"+sectionID+"-"+sideID).attr("role", "tab");
+		$("#pList"+sectionID+"-"+sideID).attr("href", "#");
+
+		newP.onclick = function(){loadProblem(sectionID,sideID)}
+
+      });
+	};
+
+	function newSection() {
+      var getting = $.get( "api/AddSection?ID={{course.id}}" );
+
+      /* Alerts the results */
+      getting.done(function( response ) {
+		sectionID = response["sectionid"];
+
+		var parentNode = document.getElementById("list-tab");
+
+		var listSection = document.createElement("div");
+		listSection.className = "nested-1 list-group-item"; 
+		listSection.innerHTML = "New Section";
+		listSection.id = "ListSection"+sectionID;
+
+		parentNode.appendChild(listSection);
+
+		var listChildSection = document.createElement("div");
+		listChildSection.className = "nested-2 list-group list-sortable"; 
+		listChildSection.id = "ListChildSection"+sectionID;
+
+		listSection.appendChild(listChildSection);
+
+		sectionCount = sectionCount + 1
+		updatedSectionCount();
+		updateGlobalSectionPlaces();
+
+		$("#ListSection"+sectionID).css({"border-top-width": "1px"});
+		//newP.onclick = function(){loadProblem(sectionID,sideID)}
+		$("#ListSection"+sectionID).on('click', function(e) {
+			if (e.target !== this)
+				return;//Ensure the user didn't click on a child
+			x = this.id.split("Section")[1]
+			selectionPressed(x)
+		});
+		generateList();
+      });
+	};
+
+	function saveProblem(){
+		data = document.getElementsByClassName("ql-editor")[0].innerHTML;
+
+		startLoading("UpdateButton");
+		newValues = getQuestionValues();
+
+		name = $("#pNameInput").val()
+		var _data = {"name":name,"description":data,"video":$("#pVideoInput").val(),"possibleAnswers":newValues,"correctAnswer":currentCorrectAnswers}
+		$.ajax({
+			type: "POST",
+			url: "api/UpdateProblem?ID={{course.id}}&SECTIONID="+currentSectionID+"&SLIDEID="+currentSlideID,
+			data: JSON.stringify(_data),
+			contentType: "application/json; charset=utf-8",
+			dataType: "json",
+			success: function(data){
+				$("#pListText"+currentSectionID+"-"+currentSlideID).text(name);
+				addDelBadge()
+				endLoading("UpdateButton");
+			},
+			failure: function(errMsg) {
+
+    	}
+	});
+	}
+
+	function loadQuizAnswers(answersList, correctAnswer){
+		currentAnswersList = answersList
+		currentCorrectAnswers = correctAnswer
+		$("#QuizAnswers").empty()
+
+		if(answersList != ""){
+			var answersString = answersList.split("~")
+			if(correctAnswer != ""){
+				var correctAnswers = correctAnswer.split("~")
+			}else{
+				var correctAnswers = ""
+			}
+
+			for (var i = 0; i < answersString.length; i++) {
+				if(correctAnswers[i] == "Y"){
+					$("#QuizAnswers").append('<div class="input-group answers-group"><button class="btn btn-danger deleteAnswers">X</button><input type="text" class="form-control possible-answer" id="pAnswerInput'+i+'" name="trailer" placeholder="" value="'+answersString[i]+'"><button class="btn btn-danger" id="RemoveAnswer'+i+'">Remove Answer</button></div>');
+
+					$("#RemoveAnswer"+i).click(function(){
+						//Couldn't use i because this would run only when clicked and i would always be the same val
+						var num = $(this).attr('id').split("Answer")[1]
+						removeAnswer(num)
+					})
+				}else{
+					$("#QuizAnswers").append('<div class="input-group answers-group"><button class="btn btn-danger deleteAnswers">X</button><input type="text" class="form-control possible-answer" id="pAnswerInput'+i+'" name="trailer" placeholder="" value="'+answersString[i]+'"><button class="btn btn-primary makeAnswer" id="MakeAnswer'+i+'">Make Answer</button></div>');
+
+					$("#MakeAnswer"+i).click(function(){
+						var num = $(this).attr('id').split("Answer")[1]
+						addAnswer(num)
+					})
+				}
+			}
+
+			$('.deleteAnswers').each(function(i, obj) {
+				$( this ).click(function() {
+  					deleteAnswer(i)
+				});
+			});
+
+			getQuestionValues();
+		}
+	}
+
+	function removeAnswer(answerID){
+		var splitList = currentCorrectAnswers.split("~")
+		var outputList = "";
+
+		for(i = 0;i < splitList.length;i++){
+			if(i == answerID){
+				outputList = outputList + "N~"
+			}else{
+				outputList = outputList + splitList[i] + "~"
+			}
+		}
+		currentCorrectAnswers = outputList.slice(0, -1);
+		currentAnswersList = getQuestionValues()
+		loadQuizAnswers(currentAnswersList,currentCorrectAnswers)
+	}
+
+	function addAnswer(answerID){
+		var splitList = currentCorrectAnswers.split("~")
+		var outputList = "";
+
+		for(i = 0;i < splitList.length;i++){
+			if(i == answerID){
+				outputList = outputList + "Y~"
+			}else{
+				outputList = outputList + splitList[i] + "~"
+			}
+		}
+		currentCorrectAnswers = outputList.slice(0, -1);
+		currentAnswersList = getQuestionValues()
+		loadQuizAnswers(currentAnswersList,currentCorrectAnswers)
+	}
+
+	function deleteAnswer(answerID){
+		var splitList = currentAnswersList.split("~")
+		var finalList = ""
+
+		var splitAnswersList = currentCorrectAnswers.split("~")
+		var outAnswersList = "";
+
+		$('.answers-group').each(function(i, obj) {
+			if(answerID != i){
+				finalList = finalList + splitList[i]+"~"
+				outAnswersList = outAnswersList + splitAnswersList[i]+"~"
+			}
+		});
+		currentAnswersList = finalList.slice(0, -1);
+		currentCorrectAnswers = outAnswersList.slice(0,-1)
+
+		loadQuizAnswers(currentAnswersList,currentCorrectAnswers)
+	}
+
+	function getQuestionValues(){
+		questionsList = ""
+
+		$('.possible-answer').each(function(i, obj) {
+			questionsList = questionsList + $(this).val() + "~"
+		});
+		questionsList = questionsList.slice(0, -1); //Remove last ~ form string
+		return questionsList
+	}
+
+	function loadProblem(sectionID,slideID){
+		hidePanel();
+		hideSection();
+		removeDelBadge();
+		deselectSections();
+		selectSlide();
+
+		currentSlideID = slideID;
+		currentSectionID = sectionID;
+		$.getJSON( "api/LoadProblem?ID={{course.id}}&SECTIONID="+sectionID+"&SLIDEID="+slideID, function( data ) {
+			$("#pNameInput").val(data["name"])
+			document.getElementsByClassName("ql-editor")[0].innerHTML = data["description"]
+			addDelBadge()
+			currentSlideType = data["type"];
+			$("#pVideoInput").val(data['video'])
+			loadSlideType();
+			showPanel();
+			if(data['type'] == "Quiz"){
+				loadQuizAnswers(data['possibleAnswers'],data['correctAnswer']);
+			}
+		});
+	}
+
+	$('.problemText').on('click', function(e) {
+		x = this.id.split("List")[1]
+		y = x.split("-")
+		loadProblem(y[0],y[1])
+	});
+
+	function addDelBadge(){
+		var hoverEle = document.getElementById("pList"+currentSectionID+"-"+currentSlideID);
+		if (hoverEle != null){
+
+		var newP = document.createElement("button");
+		newP.className = "btn btn-danger btn-del-problem"; 
+		newP.innerHTML = "Delete"
+		newP.id="DELBADGE"
+
+		newP.addEventListener("click", deleteProblem);
+
+		prevHoverEle = hoverEle;
+		hoverEle.addEventListener("mouseout", hideDeleteButton);
+		hoverEle.addEventListener("mouseover", showDeleteButton);
+
+		var element = document.getElementById("pListDiv"+currentSectionID+"-"+currentSlideID);
+		element.appendChild(newP);
+		}
+	}
+
+	function removeDelBadge(){
+		if(prevHoverEle != null){
+			prevHoverEle.removeEventListener("mouseout", hideDeleteButton);
+			prevHoverEle.removeEventListener("mouseover", showDeleteButton);
+		}
+		$(".btn-del-problem").remove();
+	}
+
+	function showDeleteButton(){
+		$(".btn-del-problem").css({"opacity":1})
+		$("#pListText"+currentSectionID+"-"+currentSlideID).css({"color":"#007bff"})
+	}
+
+	function hideDeleteButton(){
+		$(".btn-del-problem").css({"opacity":0})
+		$("#pListText"+currentSectionID+"-"+currentSlideID).css({"color":""})
+	}
+
+	function deleteProblem(){
+		var getting = $.get( "api/DeleteProblem?ID={{course.id}}&SECTIONID="+currentSectionID+"&SLIDEID="+currentSlideID );
+
+      /* Alerts the results */
+      getting.done(function( data ) {
+		  var pEle = document.getElementById("pList"+currentSectionID+"-"+currentSlideID);
+		  pEle.remove();
+		  hidePanel();
+	  });
+	}
+
+	showProblem();
+	function showProblem(){
+		var container = document.getElementById('pEditor');
+
+		editor = new Quill(container,options);
+	}
+
+	var sectionTab = $("#sectionEditorPane");
+	function showSection(){
+		sectionTab.css({"opacity":1});
+		sectionTab.css({"display":""});
+		setupMaxHeight(true,false);
+	}
+
+	hideSection();
+	function hideSection(){
+		sectionTab.css({"opacity":0});
+		setTimeout(() => {
+			if (sectionTab.css("opacity") == 0){
+				sectionTab.css({"display":"none"})
+			}
+		},300);
+	}
+
+	var mTab = $("#slideEditorPane");
+	function showPanel(){
+		mTab.css({"opacity":1});
+		mTab.css({"display":""});
+		setupMaxHeight(false,true);
+	}
+
+	hidePanel();
+	function hidePanel(){
+		mTab.css({"opacity":0});
+		setTimeout(() => {
+			if (mTab.css("opacity") == 0){
+				mTab.css({"display":"none"})
+			}
+		},500);
+	}
+
+	function moveSlideSection(slideDiv, previousList,targetList){
+		slideNum = slideDiv.id.split("-")[1]
+		prevSection = previousList.id.split("ChildSection")[1]
+		newSection = targetList.id.split("ChildSection")[1]
+
+		var getting = $.get( "api/MoveSlide?ID={{course.id}}&NEWSECTIONID="+newSection+"&OLDSECTIONID="+prevSection+"&SLIDEID="+slideNum);
+
+		/* Alerts the results */
+		getting.done(function( data ) {
+			if (currentSectionID == prevSection && currentSlideID == slideNum){
+				currentSectionID = newSection
+			}
+			slideDiv.id = "pList"+newSection+"-"+slideNum;
+			slideDiv.childNodes[0].id = "pListDiv"+newSection+"-"+slideNum;
+			slideDiv.childNodes[0].childNodes[0].id="pListText"+newSection+"-"+slideNum;
+		});
+	}
+
+	generateList();
+	function generateList(){
+		slideSortables = document.getElementsByClassName("nested-2")
+		for (var i = 0; i < slideSortables.length; i++) {
+			new Sortable(slideSortables[i], {
+				group: 'nested',
+				animation: 150,
+				fallbackOnBody: true,
+				swapThreshold: 0.65,
+				// Element is dropped into the list from another list
+				onAdd: function (/**Event*/evt) {
+					moveSlideSection(evt.item,evt.from,evt.to);
+				},
+
+			});
+		}
+
+		generateSectionSortables();
+	}
+
+	function generateSectionSortables(){
+		sectionSortables = document.getElementById("list-tab")
+		new Sortable(sectionSortables, {
+			group: 'section',
+			animation: 150,
+			fallbackOnBody: true,
+			swapThreshold: 0.65,
+			onEnd: function (/**Event*/evt) {
+				moveSection(evt.oldIndex,evt.newIndex,evt.item);
+			},
+
+		});
+	}
+	var globalSectionIDPlaces = []
+	updateGlobalSectionPlaces();
+	function updateGlobalSectionPlaces(){
+		secs = $(".nested-1")
+		globalSectionIDPlaces = []
+		$(".nested-1").each(function(i, obj) {
+    		globalSectionIDPlaces[i] = obj.id.split("Section")[1];
+		});
+	}
+
+	function moveSection(oldSectionIndex, newSectionIndex,sectionDiv){
+		if(oldSectionIndex == newSectionIndex){return null;}
+
+		var newID = globalSectionIDPlaces[newSectionIndex];
+		var oldID = globalSectionIDPlaces[oldSectionIndex];
+
+		var getting = $.get( "api/MoveSection?ID={{course.id}}&NEWSECTIONID="+newID+"&OLDSECTIONID="+oldID);
+		updateGlobalSectionPlaces();
+		getting.done(function( data ) {
+			//TODO: What happens if the section is selected then moved
+		
+		});
+	}
+
+	function selectionPressed(sectionID){
+		//Remove open slide info if clicked
+		if(currentSectionID != null && currentSlideID != null){
+			$("#pList"+currentSectionID+"-"+currentSlideID).removeClass("active")
+		}
+		hidePanel();
+		removeDelBadge();
+		currentSectionID = sectionID;
+
+		deselectSections();
+		$("#ListSection"+sectionID).css({"background-color":"rgb(52, 58, 64)"})
+		$("#ListSection"+sectionID).css({"color":"white"})
+
+		$.getJSON( "api/LoadSection?ID={{course.id}}&SECTIONID="+sectionID, function( data ) {
+			$("#sectionNameInput").val(data["name"])
+
+			showSection();
+		});
+	}
+
+	function deselectSections(){
+		$(".nested-1").css({"background-color":"#fff"})
+		$(".nested-1").css({"color":"#212529"})
+	}
+
+	function selectSlide(){
+		$(".list-group-item-action").removeClass("active")
+		$("#pList"+currentSectionID+currentSlideID).addClass("active")
+	}
+
+	$('.nested-1').on('click', function(e) {
+		if (e.target !== this)
+			return;//Ensure the user didn't click on a child
+		
+		x = this.id.split("Section")[1]
+		selectionPressed(x)
+	});
+
+	function saveSection(){
+		startLoading("SectionUpdateButton");
+
+		name = $("#sectionNameInput").val()
+		var _data = {"name":name}
+		$.ajax({
+			type: "POST",
+			url: "api/UpdateSection?ID={{course.id}}&SECTIONID="+currentSectionID,
+			data: JSON.stringify(_data),
+			contentType: "application/json; charset=utf-8",
+			dataType: "json",
+			success: function(data){
+				var sectionTab = document.getElementById("ListSection"+currentSectionID);
+
+				var sectionTxt = sectionTab.childNodes[0];
+
+				sectionTxt.nodeValue = name;
+				endLoading("SectionUpdateButton");
+			},
+			failure: function(errMsg) {
+
+    	}
+	});
+	}
+
+	function deleteSection(){
+		var getting = $.get( "api/DeleteSection?ID={{course.id}}&SECTIONID="+currentSectionID);
+
+      /* Alerts the results */
+      getting.done(function( data ) {
+		  var pEle = document.getElementById("ListSection"+currentSectionID);
+		  pEle.remove();
+		  hideSection();
+		  sectionCount = sectionCount - 1
+		  updatedSectionCount();
+	  });
+	}
+
+	setupMaxHeight(false,false);
+
+	function setupMaxHeight(checkSection, checkSlide){
+		var h = $(window).height() -32;
+		h -= $("#mainNav").outerHeight(true)
+		h -= $("#TopSection").outerHeight(true)
+		h -= $("#BottomSection").outerHeight(true)
+		var x = $("#slideEditorPane").outerHeight(true)
+		var y = $("#sectionEditorPane").outerHeight(true)
+		if( checkSection == true && y > h){
+			$("#list-tab").css({"max-height":y+"px"})
+		}else if (checkSlide == true && x > h){
+			$("#list-tab").css({"max-height":x+"px"})
+		}else{
+			$("#list-tab").css({"max-height":h+"px"})
+		}
+		//$("#list-tab").css({"max-height":"100000px"})
+	}
+
+	function startLoading(elementID){
+		var loading = document.createElement("span");
+		loading.className = "spinner-border spinner-border-sm"
+
+		var updateBtn = document.getElementById(elementID)
+		updateBtn.innerHTML = "Updating "
+		updateBtn.appendChild(loading);
+	}
+
+	function endLoading(elementID){
+		var updateBtn = document.getElementById(elementID)
+		updateBtn.innerHTML = "Update"
+	}
+
+	window.onresize = function(event) {
+		setupMaxHeight(false,false);
+	}
+
+	$("#slideType").change(function() {
+		changeSlideType();
+	});
+
+	function changeSlideType(){
+		startLoading("UpdateButton");
+
+		newType = $("#slideType").val()
+		var _data = {"type":newType}
+		$.ajax({
+			type: "POST",
+			url: "api/UpdateSlideType?ID={{course.id}}&SLIDEID="+currentSlideID,
+			data: JSON.stringify(_data),
+			contentType: "application/json; charset=utf-8",
+			dataType: "json",
+			success: function(data){
+				currentSlideType = newType;
+				loadSlideType();
+				endLoading("UpdateButton");
+			},
+			failure: function(errMsg) {
+
+    		}
+		});
+	}
+	
+	function disableAll(){
+		$("#videoSection").hide();
+		$("#answersSection").hide();
+	}
+
+	function loadSlideType(){
+		$("#slideType").val(currentSlideType);
+		disableAll();
+		if(currentSlideType == "Video"){
+			$("#videoSection").show();
+		}else if(currentSlideType == "Info"){
+			
+		}else if(currentSlideType == "Coding"){
+
+		}else if(currentSlideType == "Quiz"){
+			$("#answersSection").show();
+		}else if(currentSlideType == "Question Bank"){
+				
+		}
+	}
+
+	$( "#AddAnswer" ).click(function() {
+		  currentAnswersList = currentAnswersList +"~"
+		  var answersString = currentAnswersList.split("~")
+		  var i = answersString.length;
+		  currentCorrectAnswers = currentCorrectAnswers+"~N"
+
+		  loadQuizAnswers(currentAnswersList,currentCorrectAnswers)
+	});
+
+</script>
+
+{% endblock %}
