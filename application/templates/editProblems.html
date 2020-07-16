@@ -55,7 +55,7 @@
 		{{section.name}}
 		<div class="nested-2 list-group list-sortable" id="ListChildSection{{section.id}}"> 
 		{% for slide in section.slides %}
-    		<a class="list-group-item list-group-item-action problemText" id="pList{{section.id}}-{{slide.id}}" data-toggle="list" role="tab" href="#" aria-controls="home"><div id="pListDiv{{section.id}}-{{slide.id}}" style="border-top-width: 1px;"><div id="pListText{{section.id}}-{{slide.id}}">{{slide.name}}</div></div></a>
+    		<a class="list-group-item list-group-item-action problemText" id="pList{{section.id}}-{{slide.id}}" data-toggle="list" role="tab" href="#" aria-controls="home" specialID="{{slide.id}}"><div id="pListDiv{{section.id}}-{{slide.id}}" style="border-top-width: 1px;"><div id="pListText{{section.id}}-{{slide.id}}">{{slide.name}}</div></div></a>
 		{% endfor %}
 		</div></div>
 	{% endfor %}
@@ -97,6 +97,8 @@
 		  </div>
 	  </div>
 	  <br>
+	  <button class="btn btn-info mb-2" style="" id="SlideEditQuestionBank" data-toggle="modal" data-target="#QuestionBankModal">Edit Questions</button>
+	  <br>
 	  <div id="answersSection">
 		<label for="pNameInput" style="margin-bottom: 10px;">Quiz Answers:</label>
 		<br>
@@ -113,6 +115,11 @@
 		  <button class="btn btn-warning mb-2" style="margin-left: 10px;" onclick="saveSection()" id="SectionUpdateButton">Update</button>
 		  <button class="btn btn-danger mb-2" style="margin-left: 10px;" onclick="deleteSection()" id="SectionDeleteButton">Delete Section</button>
 	  </div>
+	  <div id="QuizBankLoadingDiv">
+		  <div class="spinner-border" role="status">
+		    <span class="sr-only">Loading...</span>
+		  </div>
+	  </div>
 	  </div>
   </div>
   <div class="row">
@@ -126,8 +133,59 @@
 <br>
 <hr>
 </div>
+<!-- Modal -->
+<div class="modal fade" id="QuestionBankModal" tabindex="-1" role="dialog" aria-labelledby="QuestionBankModal" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Question Bank</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+		<div class="form-group">
+				<div class="input-group">
+				<select class="form-control" id="questionSelected">
+					<option>Info</option>
+				</select>
+				<button class="btn btn-success mb-2" style="margin-left: 20px;margin-bottom: 20px!important;" id="AddQuestionBank">New Question</button>
+		</div>
+		<div id="QuestionBankQuestionDiv">
+			<div class="input-group">
+				<input type="text" class="form-control" id="questionBankNameInput" placeholder="" maxlength="30">
+				<button class="btn btn-warning mb-2" style="margin-left: 10px;" id="QuestionBankUpdate">Update</button>
+				<button class="btn btn-danger mb-2" style="margin-left: 10px;" id="QuestionBankDelete">Delete</button>
+			</div>
+			<label for="questionEditor" id="questionLabel">Question Explanation:</label>
+			<div id="questionEditor">
+				<div id="toolbar">
+				</div>
+			</div>
+			<br>
+			<label style="margin-bottom:10px">Question Answers:</label>
+			<br>
+			<div class="" id="QuestionBankQuizAnswers">
+			</div>
+			<button class="btn btn-success mb-2" id="QuestionBankNewAnswer">Add Answer</button>
+			<br>
+		</div>
+		<div id="QuestionBankFillerDiv">
+			<div class="spinner-border" role="status" style="display:block;margin: auto;">
+			<span class="sr-only">Loading...</span>
+			</div>
+		</div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
 <script>
 	var editor;
+	var questionEditor;
+	var currentQuestionBankSelection;
 
 	var toolbarOptions = [
 		[{ 'font':[]},{'size': [] }],
@@ -173,6 +231,7 @@
 
 	var currentCorrectAnswers = ""
 	var currentAnswersList = "";
+	var currentQuestionBankAnswersList = [];
 	var currentPID = -1;
 	var courseID = {{course.id}}
 	var prevHoverEle = null;
@@ -212,6 +271,7 @@
 		$("#pList"+sectionID+"-"+sideID).attr("data-toggle", "list");
 		$("#pList"+sectionID+"-"+sideID).attr("role", "tab");
 		$("#pList"+sectionID+"-"+sideID).attr("href", "#");
+		$("#pList"+sectionID+"-"+sideID).attr("specialid", sideID);
 
 		newP.onclick = function(){loadProblem(sectionID,sideID)}
 
@@ -245,6 +305,8 @@
 		updateGlobalSectionPlaces();
 
 		$("#ListSection"+sectionID).css({"border-top-width": "1px"});
+		$("#ListSection"+sectionID).attr("specialid", sectionID);
+
 		//newP.onclick = function(){loadProblem(sectionID,sideID)}
 		$("#ListSection"+sectionID).on('click', function(e) {
 			if (e.target !== this)
@@ -257,13 +319,12 @@
 	};
 
 	function saveProblem(){
-		data = document.getElementsByClassName("ql-editor")[0].innerHTML;
+		data = $("#slideEditorPane").find(".ql-editor").html()
 
 		startLoading("UpdateButton");
-		newValues = getQuestionValues();
 
 		name = $("#pNameInput").val()
-		var _data = {"name":name,"description":data,"video":$("#pVideoInput").val(),"possibleAnswers":newValues,"correctAnswer":currentCorrectAnswers}
+		var _data = {"name":name,"description":data,"video":$("#pVideoInput").val()}
 		$.ajax({
 			type: "POST",
 			url: "api/UpdateProblem?ID={{course.id}}&SECTIONID="+currentSectionID+"&SLIDEID="+currentSlideID,
@@ -273,115 +334,97 @@
 			success: function(data){
 				$("#pListText"+currentSectionID+"-"+currentSlideID).text(name);
 				addDelBadge()
-				endLoading("UpdateButton");
+				if($("#slideType").val() == "Quiz"){
+					saveQuizAnswers()
+				}else{
+					endLoading("UpdateButton");
+				}
 			},
 			failure: function(errMsg) {
 
     	}
-	});
+		});
 	}
 
-	function loadQuizAnswers(answersList, correctAnswer){
-		currentAnswersList = answersList
-		currentCorrectAnswers = correctAnswer
+	function saveQuizAnswers(){
+		updateLocalVar()
+		var _data = []
+
+		for (i = 0; i < currentQuestionBankAnswersList.length; ++i) {
+			_data.push({
+				"name":currentQuestionBankAnswersList[i]['name'],
+				"correct":currentQuestionBankAnswersList[i]['correct']
+			})
+		}
+
+		$.ajax({
+			type: "POST",
+			url: "api/UpdateQuestionBankAnswers?QID="+currentQuestionBankSelection,
+			data: JSON.stringify(_data),
+			contentType: "application/json; charset=utf-8",
+			dataType: "json",
+			success: function(data){
+				endLoading("UpdateButton");
+			},
+			failure: function(errMsg) {
+				endLoading("UpdateButton");
+    		}
+		});
+	}
+
+	function loadQuizAnswers(){
 		$("#QuizAnswers").empty()
 
-		if(answersList != ""){
-			var answersString = answersList.split("~")
-			if(correctAnswer != ""){
-				var correctAnswers = correctAnswer.split("~")
-			}else{
-				var correctAnswers = ""
-			}
+		for (i = 0; i < currentQuestionBankAnswersList.length; ++i) {
+			var a = currentQuestionBankAnswersList[i];
+			if(a['correct'] == 1){
+				$("#QuizAnswers").append('<div class="input-group answers-group"><button class="btn btn-danger deleteAnswers">X</button><input type="text" class="form-control possible-answer" id="pAnswerInput'+i+'" name="trailer" placeholder="" value="'+a['name']+'"><button class="btn btn-danger" id="RemoveAnswer'+i+'">Remove Answer</button></div>');
 
-			for (var i = 0; i < answersString.length; i++) {
-				if(correctAnswers[i] == "Y"){
-					$("#QuizAnswers").append('<div class="input-group answers-group"><button class="btn btn-danger deleteAnswers">X</button><input type="text" class="form-control possible-answer" id="pAnswerInput'+i+'" name="trailer" placeholder="" value="'+answersString[i]+'"><button class="btn btn-danger" id="RemoveAnswer'+i+'">Remove Answer</button></div>');
-
-					$("#RemoveAnswer"+i).click(function(){
-						//Couldn't use i because this would run only when clicked and i would always be the same val
+				$("#RemoveAnswer"+i).click(function(){
 						var num = $(this).attr('id').split("Answer")[1]
 						removeAnswer(num)
-					})
-				}else{
-					$("#QuizAnswers").append('<div class="input-group answers-group"><button class="btn btn-danger deleteAnswers">X</button><input type="text" class="form-control possible-answer" id="pAnswerInput'+i+'" name="trailer" placeholder="" value="'+answersString[i]+'"><button class="btn btn-primary makeAnswer" id="MakeAnswer'+i+'">Make Answer</button></div>');
+				})
+			}else{
+				$("#QuizAnswers").append('<div class="input-group answers-group"><button class="btn btn-danger deleteAnswers">X</button><input type="text" class="form-control possible-answer" id="pAnswerInput'+i+'" name="trailer" placeholder="" value="'+a['name']+'"><button class="btn btn-primary makeAnswer" id="MakeAnswer'+i+'">Make Answer</button></div>');
 
-					$("#MakeAnswer"+i).click(function(){
+				$("#MakeAnswer"+i).click(function(){
 						var num = $(this).attr('id').split("Answer")[1]
 						addAnswer(num)
-					})
-				}
+				})
 			}
+		};
 
-			$('.deleteAnswers').each(function(i, obj) {
-				$( this ).click(function() {
-  					deleteAnswer(i)
-				});
+		$('.deleteAnswers').each(function(i, obj) {
+			$( this ).click(function() {
+  				deleteQuestionBankAnswer(i)
 			});
-
-			getQuestionValues();
-		}
-	}
-
-	function removeAnswer(answerID){
-		var splitList = currentCorrectAnswers.split("~")
-		var outputList = "";
-
-		for(i = 0;i < splitList.length;i++){
-			if(i == answerID){
-				outputList = outputList + "N~"
-			}else{
-				outputList = outputList + splitList[i] + "~"
-			}
-		}
-		currentCorrectAnswers = outputList.slice(0, -1);
-		currentAnswersList = getQuestionValues()
-		loadQuizAnswers(currentAnswersList,currentCorrectAnswers)
-	}
-
-	function addAnswer(answerID){
-		var splitList = currentCorrectAnswers.split("~")
-		var outputList = "";
-
-		for(i = 0;i < splitList.length;i++){
-			if(i == answerID){
-				outputList = outputList + "Y~"
-			}else{
-				outputList = outputList + splitList[i] + "~"
-			}
-		}
-		currentCorrectAnswers = outputList.slice(0, -1);
-		currentAnswersList = getQuestionValues()
-		loadQuizAnswers(currentAnswersList,currentCorrectAnswers)
-	}
-
-	function deleteAnswer(answerID){
-		var splitList = currentAnswersList.split("~")
-		var finalList = ""
-
-		var splitAnswersList = currentCorrectAnswers.split("~")
-		var outAnswersList = "";
-
-		$('.answers-group').each(function(i, obj) {
-			if(answerID != i){
-				finalList = finalList + splitList[i]+"~"
-				outAnswersList = outAnswersList + splitAnswersList[i]+"~"
-			}
 		});
-		currentAnswersList = finalList.slice(0, -1);
-		currentCorrectAnswers = outAnswersList.slice(0,-1)
 
-		loadQuizAnswers(currentAnswersList,currentCorrectAnswers)
+
 	}
 
-	function getQuestionValues(){
-		questionsList = ""
+	function updateLocalVar(){
+		for (i = 0; i < currentQuestionBankAnswersList.length; ++i) {
+			currentQuestionBankAnswersList[i]['name'] = $("#pAnswerInput"+i).val()
+		}
+	}
 
-		$('.possible-answer').each(function(i, obj) {
-			questionsList = questionsList + $(this).val() + "~"
-		});
-		questionsList = questionsList.slice(0, -1); //Remove last ~ form string
-		return questionsList
+	function removeAnswer(num){
+		updateLocalVar()
+		currentQuestionBankAnswersList[num]['correct'] = 0
+		loadQuizAnswers() 
+	}
+
+	function addAnswer(num){
+		updateLocalVar()
+		currentQuestionBankAnswersList[num]['correct'] = 1
+		loadQuizAnswers() 
+	}
+
+	function deleteAnswer(num){
+		updateLocalVar();
+		currentQuestionBankAnswersList.splice(num, 1);
+		loadQuizAnswers();
 	}
 
 	function loadProblem(sectionID,slideID){
@@ -395,15 +438,15 @@
 		currentSectionID = sectionID;
 		$.getJSON( "api/LoadProblem?ID={{course.id}}&SECTIONID="+sectionID+"&SLIDEID="+slideID, function( data ) {
 			$("#pNameInput").val(data["name"])
-			document.getElementsByClassName("ql-editor")[0].innerHTML = data["description"]
+			$("#slideEditorPane").find(".ql-editor").html(data['description'])
 			addDelBadge()
 			currentSlideType = data["type"];
 			$("#pVideoInput").val(data['video'])
-			loadSlideType();
 			showPanel();
 			if(data['type'] == "Quiz"){
-				loadQuizAnswers(data['possibleAnswers'],data['correctAnswer']);
+				currentQuestionBankSelection = data['questionID']
 			}
+			loadSlideType();
 		});
 	}
 
@@ -521,6 +564,31 @@
 		});
 	}
 
+	function slideMoved(targetList){
+		var _list = []
+
+		$("#"+targetList.id).children('a').each(function () {
+			_list.push($(this).attr("specialid"))
+		});
+
+		var _data = {"list":_list}
+		var _sectionID = targetList.id.split("Section")[1]
+
+		$.ajax({
+			type: "POST",
+			url: "api/SetSectionSlides?ID={{course.id}}&SECTIONID="+_sectionID,
+			data: JSON.stringify(_data),
+			contentType: "application/json; charset=utf-8",
+			dataType: "json",
+			success: function(data){
+		
+			},
+			failure: function(errMsg) {
+
+    	}
+		});
+	}
+
 	generateList();
 	function generateList(){
 		slideSortables = document.getElementsByClassName("nested-2")
@@ -534,6 +602,9 @@
 				onAdd: function (/**Event*/evt) {
 					moveSlideSection(evt.item,evt.from,evt.to);
 				},
+				onEnd: function(evt){
+					slideMoved(evt.to)
+				}
 
 			});
 		}
@@ -638,7 +709,7 @@
 			failure: function(errMsg) {
 
     	}
-	});
+		});
 	}
 
 	function deleteSection(){
@@ -708,18 +779,39 @@
 			dataType: "json",
 			success: function(data){
 				currentSlideType = newType;
+				if(newType == "Quiz"){
+					currentQuestionBankSelection = data['questionID']
+				}
 				loadSlideType();
 				endLoading("UpdateButton");
 			},
 			failure: function(errMsg) {
-
+				endLoading("UpdateButton");
     		}
 		});
+	}
+
+	function getQuizAnswers(){
+	  hideQuestionBankQuestionDetails();
+	  $.getJSON( "api/GetQuestionBankQuestion?QuestionID="+currentQuestionBankSelection, function( data ) {
+		  currentQuestionBankAnswersList = []
+
+		  for (i = 0; i < data['answers'].length; ++i) {
+			var a = data['answers'][i]
+			currentQuestionBankAnswersList.push({
+				"name":a['name'],
+				"correct":a['correct']
+			})
+		  }
+
+		  loadQuizAnswers();
+	  });
 	}
 	
 	function disableAll(){
 		$("#videoSection").hide();
 		$("#answersSection").hide();
+		$("#SlideEditQuestionBank").hide();
 	}
 
 	function loadSlideType(){
@@ -733,19 +825,250 @@
 
 		}else if(currentSlideType == "Quiz"){
 			$("#answersSection").show();
+			getQuizAnswers();
 		}else if(currentSlideType == "Question Bank"){
-				
+			getQuestionBank(true);
+			$("#SlideEditQuestionBank").show();
 		}
 	}
 
-	$( "#AddAnswer" ).click(function() {
-		  currentAnswersList = currentAnswersList +"~"
-		  var answersString = currentAnswersList.split("~")
-		  var i = answersString.length;
-		  currentCorrectAnswers = currentCorrectAnswers+"~N"
+	var questionContainer = document.getElementById('questionEditor');
+	questionEditor = new Quill(questionContainer,options)
 
-		  loadQuizAnswers(currentAnswersList,currentCorrectAnswers)
+	var questionBankIDS = {}
+
+	function getQuestionBank(loadFirst = false){
+	  $.getJSON( "api/GetQuestionBank?ID={{course.id}}&SECTIONID="+currentSectionID+"&SLIDEID="+currentSlideID, function( data ) {
+		  var questionsList = $('#questionSelected');
+		  questionBankIDS = {}
+		  questionsList.empty()
+		  var i = 1;
+		  $.each( data, function( key, val ) {
+			questionBankIDS[i] = key
+			questionsList.append('<option value="'+val+'" id="QuestionBankOptionNum'+key+'">'+val+'</option>')
+			i += 1
+		  });
+
+		  $("#questionSelected").change(function() {
+			  loadSelectedQuestionBank();
+		  });
+
+		  if(loadFirst){
+			loadSelectedQuestionBank();
+		  }
+	  });
+	}
+
+	function loadSelectedQuestionBank(){
+		var selectedQuestionID = $('#questionSelected').find(":selected").attr('id').split('Num')[1]
+		loadQuestionBankQuestion(selectedQuestionID)
+	}
+
+	function loadQuestionBankQuestion(qID){
+		hideQuestionBankQuestionDetails();
+	  $.getJSON( "api/GetQuestionBankQuestion?QuestionID="+qID, function( data ) {
+		  currentQuestionBankSelection = qID
+		  $("#questionBankNameInput").val(data['name'])
+		  $("#questionEditor").find(".ql-editor").html(data['explanation'])
+
+		  $("#questionSelected").val(data['name'])
+
+		  showQuestionBankQuestionDetails();
+		  currentQuestionBankAnswersList = []
+
+		  for (i = 0; i < data['answers'].length; ++i) {
+			var a = data['answers'][i]
+			currentQuestionBankAnswersList.push({
+				"name":a['name'],
+				"correct":a['correct']
+			})
+		  }
+
+		  loadQuestionBankAnswers();
+	  });
+	}
+
+	function hideQuestionBankQuestionDetails(){
+	  $("#QuestionBankFillerDiv").css({"height":$("#QuestionBankQuestionDiv").height()})
+	  $("#QuestionBankFillerDiv").show();
+	  $("#QuestionBankQuestionDiv").hide();
+	}
+
+	function showQuestionBankQuestionDetails(){
+	  $("#QuestionBankFillerDiv").hide();
+	  $("#QuestionBankQuestionDiv").show();
+	}
+
+	function saveCurrentQuestion(){
+		startQuestionBankLoading();
+
+		var _data = {"name":$("#questionBankNameInput").val(),"explanation": $("#questionEditor").find(".ql-editor").html()}
+
+		$.ajax({
+			type: "POST",
+			url: "api/UpdateQuestionBankQuestion?QID="+currentQuestionBankSelection,
+			data: JSON.stringify(_data),
+			contentType: "application/json; charset=utf-8",
+			dataType: "json",
+			success: function(data){
+				$('#questionSelected').find(":selected").html(_data['name'])
+
+				saveQuestionBankAnswers();
+			},
+			failure: function(errMsg) {
+				endQuestionBankLoading();
+    		}
+		});
+	}
+
+	function deleteQuestionBankQuestion(){
+	  var getting = $.get( "api/DeleteQuestionBankQuestion?QID="+currentQuestionBankSelection);
+	  startDeleteQuestionBankLoading()
+      /* Alerts the results */
+      getting.done(function( data ) {
+		  getQuestionBank(true)
+		  endDeleteQuestionBankLoading()
+	  });
+	}
+
+	$("#QuestionBankDelete").click(function(){deleteQuestionBankQuestion();})
+
+	function startQuestionBankLoading(){
+		var loading = document.createElement("span");
+		loading.className = "spinner-border spinner-border-sm"
+
+		var updateBtn = document.getElementById("QuestionBankUpdate")
+		updateBtn.innerHTML = "Updating "
+		updateBtn.appendChild(loading);
+	}
+
+	function startDeleteQuestionBankLoading(){
+		var loading = document.createElement("span");
+		loading.className = "spinner-border spinner-border-sm"
+
+		var updateBtn = document.getElementById("QuestionBankDelete")
+		updateBtn.innerHTML = "Deleting "
+		updateBtn.appendChild(loading);
+	}
+
+	function endDeleteQuestionBankLoading(){
+		$("#QuestionBankDelete").html("Delete")
+	}
+
+	function endQuestionBankLoading(){
+		$("#QuestionBankUpdate").html("Update")
+	}
+
+	$("#QuestionBankUpdate").click(function(){saveCurrentQuestion();})
+
+	function addNewQuestionBank(){
+		var getting = $.get( "api/AddQuestionToBank?ID={{course.id}}&SECTIONID="+currentSectionID+"&SLIDEID="+currentSlideID );
+
+		/* Alerts the results */
+		getting.done(function( response ) {
+			getQuestionBank(false)
+			loadQuestionBankQuestion(response);
+		});
+	}
+
+	$("#AddQuestionBank").on('click', function(e) {
+			addNewQuestionBank();
 	});
+
+	function addAnswersAnswer(){
+		currentQuestionBankAnswersList.push({"name":"New Answer","correct":0})
+		loadQuizAnswers();
+	}
+
+	$( "#AddAnswer" ).click(function() {
+		addAnswersAnswer()
+	});
+
+	function addNewQuestionBankAnswer(){
+		currentQuestionBankAnswersList.push({"name":"New Answer","correct":0})
+		loadQuestionBankAnswers();
+	}
+
+	function loadQuestionBankAnswers(){
+		$("#QuestionBankQuizAnswers").empty()
+
+		for (i = 0; i < currentQuestionBankAnswersList.length; ++i) {
+			var a = currentQuestionBankAnswersList[i];
+			if(a['correct'] == 1){
+				$("#QuestionBankQuizAnswers").append('<div class="input-group answers-group"><button class="btn btn-danger questionBankDeleteAnswers">X</button><input type="text" class="form-control possible-answer" id="pQuestionBankAnswerInput'+i+'" name="trailer" placeholder="" value="'+a['name']+'"><button class="btn btn-danger" id="QuestionBankRemoveAnswer'+i+'">Remove Answer</button></div>');
+
+				$("#QuestionBankRemoveAnswer"+i).click(function(){
+						var num = $(this).attr('id').split("Answer")[1]
+						removeQuestionBankAnswer(num)
+				})
+			}else{
+				$("#QuestionBankQuizAnswers").append('<div class="input-group answers-group"><button class="btn btn-danger questionBankDeleteAnswers">X</button><input type="text" class="form-control possible-answer" id="pQuestionBankAnswerInput'+i+'" name="trailer" placeholder="" value="'+a['name']+'"><button class="btn btn-primary makeAnswer" id="QuestionBankMakeAnswer'+i+'">Make Answer</button></div>');
+
+				$("#QuestionBankMakeAnswer"+i).click(function(){
+						var num = $(this).attr('id').split("Answer")[1]
+						addQuestionBankAnswer(num)
+				})
+			}
+		};
+
+		$('.questionBankDeleteAnswers').each(function(i, obj) {
+			$( this ).click(function() {
+  				deleteQuestionBankAnswer(i)
+			});
+		});
+	}
+
+	function addQuestionBankAnswer(num){
+		updateQuestionBankLocalVar()
+		currentQuestionBankAnswersList[num]['correct'] = 1
+		loadQuestionBankAnswers() 
+	}
+
+	function removeQuestionBankAnswer(num){
+		updateQuestionBankLocalVar()
+		currentQuestionBankAnswersList[num]['correct'] = 0
+		loadQuestionBankAnswers() 
+	}
+
+	$("#QuestionBankNewAnswer").click(function(){addNewQuestionBankAnswer();})
+
+	function deleteQuestionBankAnswer(num){
+		updateQuestionBankLocalVar();
+		currentQuestionBankAnswersList.splice(num, 1);
+		loadQuestionBankAnswers();
+	}
+
+	function updateQuestionBankLocalVar(){
+		for (i = 0; i < currentQuestionBankAnswersList.length; ++i) {
+			currentQuestionBankAnswersList[i]['name'] = $("#pQuestionBankAnswerInput"+i).val()
+		}
+	}
+
+	function saveQuestionBankAnswers(){
+		updateQuestionBankLocalVar()
+		var _data = []
+
+		for (i = 0; i < currentQuestionBankAnswersList.length; ++i) {
+			_data.push({
+				"name":currentQuestionBankAnswersList[i]['name'],
+				"correct":currentQuestionBankAnswersList[i]['correct']
+			})
+		}
+
+		$.ajax({
+			type: "POST",
+			url: "api/UpdateQuestionBankAnswers?QID="+currentQuestionBankSelection,
+			data: JSON.stringify(_data),
+			contentType: "application/json; charset=utf-8",
+			dataType: "json",
+			success: function(data){
+				endQuestionBankLoading();
+			},
+			failure: function(errMsg) {
+				endQuestionBankLoading();
+    		}
+		});
+	}
 
 </script>
 

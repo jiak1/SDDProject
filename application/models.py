@@ -80,7 +80,7 @@ class Section(db.Model):
 	orderIndex = db.Column(db.Integer)
 	courseid = db.Column(db.Integer,db.ForeignKey("course.id"))
 	name = db.Column(db.String(30))
-	slides = db.relationship("Slide",backref="section")
+	slides = db.relationship("Slide",backref="section",order_by="Slide.orderIndex")
 	
 	def getSlide(self, SID):
 		SID = int(SID)
@@ -88,7 +88,7 @@ class Section(db.Model):
 			if (_slide.id == SID):
 				return _slide
 		return None
-	
+
 	def setOrderIndex(self):
 		self.orderIndex=self.getNextSlideIndex()
 		
@@ -100,6 +100,19 @@ class Slide(db.Model):
 	name = db.Column(db.String(30))
 	video = db.Column(db.String(50),default="")
 	type = db.Column(db.String(15), default="Info")
-	
-	possibleAnswers = db.Column(db.Text())
-	correctAnswer = db.Column(db.Text())
+
+	questions = db.relationship("Question",backref="slide")
+
+class Question(db.Model):
+	id = db.Column(db.Integer, primary_key=True)
+	slideid = db.Column(db.Integer,db.ForeignKey("slide.id"))
+	explanation = db.Column(db.Text())
+	name = db.Column(db.String(30))
+
+	answers = db.relationship("Answer",backref="question")
+
+class Answer(db.Model):
+	id = db.Column(db.Integer, primary_key=True)
+	questionid = db.Column(db.Integer,db.ForeignKey("question.id"))
+	name = db.Column(db.String(100))
+	correct = db.Column(db.Boolean,default=0)

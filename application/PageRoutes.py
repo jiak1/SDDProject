@@ -3,7 +3,7 @@ from flask_login import current_user, login_user,logout_user, login_required
 from werkzeug.urls import url_parse
 from werkzeug.utils import secure_filename
 from .program import db,login
-from .models import Account, Course,Slide
+from .models import Account, Course,Slide,Question
 import os
 import shutil
 from .util import findProblem
@@ -242,9 +242,13 @@ def editProblems():
 				p = Slide(section=s,name="New Problem")
 				db.session.add(p)
 				db.session.commit()
-				p.orderIndex = p.id
+				
+				_q = Question(slide=p,name="New Question",explanation="")
+				db.session.add(_q)
 
+				p.orderIndex = p.id
 				db.session.commit()
+
 				response = {
 					"slideid":p.id,
 					"sectionid":s.id

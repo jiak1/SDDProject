@@ -337,11 +337,10 @@ button:disabled, button[disabled]{
 	}
 
 	.mainSection{
-		overflow-y:auto;
 	}
 }
 
-.deleteAnswers{
+.deleteAnswers,.questionBankDeleteAnswers{
 	margin-right: 20px;
 }
 
@@ -379,7 +378,7 @@ label{
 	margin-left: auto;
     margin-right: auto;
     display: block;
-	margin-top:20px;
+	margin-top: calc(-30% + 30px);
 	margin-bottom:20px;
 }
 
@@ -387,9 +386,12 @@ label{
 	word-break:break-word;
 	margin-bottom: 1px;
 	margin-left:5px;
+	padding: 10px;
 }
 
 .CenteringDiv{
+	padding-top:30%;
+	padding-bottom:30%;
 	margin-top:5vw;
 }
 
@@ -398,8 +400,42 @@ label{
 }
 
 .mainSection{
-	overflow-y:none;
+	overflow-y:auto;
 	height:100%;
 	min-height: inherit;
 	max-height: inherit;
+}
+
+#questionLabel{
+	margin-top:30px;
+	margin-bottom: 10px;
+}
+
+#QuestionBankNewAnswer{
+	margin-bottom: 20px !important;
+    margin-top: 10px;
+    margin-left: 5px;
+}
+
+img{
+	max-height: 400px;
+    width: 100%;
+    object-fit: contain;
+    overflow-x: hidden;
+}
+
+#QuestionExplanationDiv{
+	font-size: 24px;
+}
+
+#StartQuestions{
+	margin: auto;
+    margin-top: 40px;
+    display: block;
+}
+
+.NextButton{
+	margin: auto;
+    margin-top: 30px;
+    display: block;
 }

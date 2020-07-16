@@ -99,16 +99,20 @@
 
 	<div id="QuizSection">
 	<div class="row problemView">
-		<div class="col-12 mainSection">
-			<div class="CenteringDiv">
-			<div class="CenterText container-sm">
-				<div class="TopDiv ql-editor" id="QuizExplanation"></div>
-			</div>
-			<div class="container-sm">
-				<div class="row row-quiz" style="text-align:center" id="QARow">
+		<div id="MainQuizSectionScroll" class="col-12 mainSection">
+			<div class="CenteringDiv" style="padding-top:0px;padding-bottom:0px">
+				<div class="CenterText container-sm">
+					<div id="QuestionExplanationDiv" class="TopDiv">
+					</div>
+					<div class="TopDiv" id="QuestionAmountSelectionDiv">
+						<label>Question Count: </label>
+						<select class="form-control" id="questionBankAmount" style="width:auto;display: inline-block;">
+						</select>
+						<button type="button" class="btn btn-dark" id="StartQuestions">Start</button>
+					</div>
 				</div>
-				<button type="button" class="btn btn-dark" id="MarkQuiz">Submit Answer</button>
 			</div>
+			<div id="ActualQuestionsDiv">
 			</div>
 		</div>
 	</div>
@@ -140,6 +144,7 @@
 </div>
 <script src="{{ url_for('static', filename='juniper/juniper.min.js') }}"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/malihu-custom-scrollbar-plugin/3.1.5/jquery.mCustomScrollbar.concat.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/jquery-scrollTo/2.1.2/jquery.scrollTo.min.js"></script>
 <script type="text/javascript">
 function closeSidebar(){
     $('#sidebar').removeClass('active');
@@ -450,9 +455,16 @@ function hideAllSections(){
 	$("#QuizSection").hide();
 	$("#QuizExplanation").hide();
 	$(".CenterVid").hide();
+	$("#QuestionExplanationDiv").hide();
+	$("#StartQuestions").hide();
 	selectedAnswer = -1;
 	quizMarked = false
 }
+var actualSlideDBID = -1;
+
+$("#StartQuestions").click(function(){
+	$('#MainQuizSectionScroll').scrollTo($(".quizQuestionQuestion")[0], 1000);
+})
 
 function changeProblems(problemID){
 	if(currentProblemID == problemID){return}
@@ -464,6 +476,9 @@ function changeProblems(problemID){
 		contentType: "application/json; charset=utf-8",
 		dataType: "json",
 		success: function(data){
+			currentProblemID = problemID
+			actualSlideDBID = data['id']
+
 			$("#ProblemName").text(data['name']);
 
 			hideAllSections();
@@ -478,9 +493,7 @@ function changeProblems(problemID){
 				$("#NormalSection").show();
 			}else if(data['type'] == "Quiz"){
 				$("#QuizSection").show();
-				$("#QuizExplanation").show();
-				$("#QuizExplanation").html(data['explanation'])
-				loadQuizPrompts(data['possibleAnswers'])
+				getQuizQuestions(data['type'])
 
 			}else if(data['type'] == "Video"){
 				$("#NormalExplanation").html(data['explanation'])
@@ -490,7 +503,12 @@ function changeProblems(problemID){
 				$(".CenterVid").show();
 				
 			}else if(data['type'] == "Question Bank"){
-
+				$("#StartQuestions").show();
+				$("#QuestionAmountSelectionDiv").show();
+				$("#QuizSection").show();
+				$("#QuestionExplanationDiv").show();
+				$("#QuestionExplanationDiv").html(data['explanation'])
+				getQuizQuestions(data['type'])
 			}
 
 			if(data['hasPrevious']){
@@ -504,13 +522,115 @@ function changeProblems(problemID){
 			}else{
 				$('#NextProblem').prop('disabled', true);
 			}
-
-			currentProblemID = problemID
 		},
 		failure: function(errMsg) {
 
     	}
 	});
+}
+
+function getQuizQuestions(quiz_type,setAmount = false, amnt = 0){
+	$("#ActualQuestionsDiv").empty()
+	$.getJSON( "api/GetSlideQuestions?SLIDEID="+actualSlideDBID, function( data ) {
+		quizMarked = false
+		var len =  data.length
+		if(quiz_type == "Quiz"){
+			len = 1
+			$("#QuestionAmountSelectionDiv").hide();
+		}
+
+		//Setup question Count
+		$("#questionBankAmount").empty();
+		if(len < 5){
+			$("#questionBankAmount").append("<option>"+len+"</option>")
+		}else{
+			$("#questionBankAmount").append("<option>5</option>")
+		}
+		//Add options every 5 questions
+		for (i = 10; i <= len;i+=5 ){
+			$("#questionBankAmount").append("<option>"+i+"</option>")
+		}
+
+		for (i = 0; i < len; ++i) {
+			$("#ActualQuestionsDiv").append('<div class="CenteringDiv QuestionBankQuestion"><div class="CenterText container-sm"><div class="TopDiv ql-editor quizQuestionQuestion" id="QuizExplanation'+i+'" style=""></div></div><div class="container-sm"><div class="row row-quiz" style="text-align:center" id="QARow'+i+'"></div></div></div>')
+		
+
+			$("#QuizExplanation"+i).html(data[i]['explanation'])
+
+			for (a = 0; a < data[i]['answers'].length; ++a) {
+				var answerVal = data[i]['answers'][a]
+				$("#QARow"+i).append('<div class="col radio-col radio-col-'+i+'" id="'+i+'QANUM'+a+'"><input type="radio" name="quizradio'+i+'" value="'+answerVal+'" class="quiz-answer" id="'+i+'QARADIO'+a+'"><p class="QuizText">'+answerVal+'</p></div>');
+
+				$("#"+i+"QANUM"+a).click(function() {
+					var num2 = $(this).attr("id").split("QANUM")[1]
+					var num1 = $(this).attr("id").split("QANUM")[0]
+
+					$("#"+num1+"QARADIO"+num2).prop("checked", true);
+					$("#"+num1+"QARADIO"+num2).trigger("change")
+				});
+
+				$("#"+i+"QANUM"+a).change(function() {
+					var num2 = $(this).attr("id").split("QANUM")[1]
+					var num1 = $(this).attr("id").split("QANUM")[0]
+
+					//Clear all others
+					$(".radio-col-"+num1).each(function(i, obj){
+						$(this).css({"background-color":"","color":""})
+					})
+
+					if($("#"+num1+"QARADIO"+num2).is(':checked')) { 
+						$("#"+num1+"QANUM"+num2).css({"background-color":"#343a40","color":"white"})
+					}
+				});
+			}
+		}
+		shuffleQuestions();
+		var amount = $("#questionBankAmount").val()
+		if(setAmount){
+			amount = amnt
+			$("#questionBankAmount").val(amnt)
+		}
+
+		if(quiz_type != "Quiz"){
+			$(".CenteringDiv").each(function(i, obj){
+				if(i-1 > amount){
+					$(this).remove()
+				}
+			})
+		}
+
+		$("#ActualQuestionsDiv").append('<button type="button" class="btn btn-dark" id="MarkQuiz">Submit Answer</button>')
+		$("#MarkQuiz").click(function() {
+			MarkQuiz();
+		});
+
+		$(".QuestionBankQuestion").each(function(i, obj){
+			$(this).append('<button type="button" class="btn btn-dark NextQuestionsButton" id="NextQuestions'+i+'" class="NextButton">Next</button>')
+		})
+
+		$(".NextQuestionsButton").click(function(){
+			var num = $(this).attr("id").split("Questions")[1]
+			alert(document.getElementsByClassName("quizQuestionQuestion")[num+1])
+			$('#MainQuizSectionScroll').scrollTo(document.getElementsByClassName("quizQuestionQuestion")[num+1], 1000);
+		})
+
+		if(quiz_type == "Quiz"){
+			$(".CenteringDiv").css({"padding-top":"0px","padding-bottom":"0px"})
+			$("#MarkQuiz").css({"margin-top":"20px"})
+		}
+	});
+}
+
+$("#questionBankAmount").change(function() {
+	getQuizQuestions("Question Bank",true,$("#questionBankAmount").val());
+})
+
+function shuffleQuestions(){
+	var parent = $("#ActualQuestionsDiv");
+    var divs = parent.children();
+    while (divs.length) {
+        parent.append(divs.splice(Math.floor(Math.random() * divs.length), 1)[0]);
+    }
 }
 
 $("#PreviousProblem").click(function() {
@@ -530,39 +650,50 @@ $('.SlideTitle').each(function(i, obj) {
 hideAllSections();
 changeProblems(1);
 
-function loadQuizPrompts(quizPrompts){
-	currentQuestionsList = quizPrompts
-	$("#QARow").empty()
-	var questionsList = currentQuestionsList.split("~")
+function MarkQuiz(){
+	if(quizMarked){return}
 
-	for (var i = 0; i < questionsList.length; i++) {
-		$("#QARow").append('<div class="col radio-col" id="QANUM'+i+'"><input type="radio" name="quizradio" value="'+i+'" class="quiz-answer" id="QARADIO'+i+'"><p class="QuizText">'+questionsList[i]+'</p></div>');
+	startMarking();
+	$.getJSON( "api/GetQuizAnswers?SLIDEID="+actualSlideDBID, function( data ) {
+		var len =  $("#questionBankAmount").val()
 
-		$("#QANUM"+i).click(function() {
-			var num = $(this).attr("id").split("NUM")[1]
+		if(data['type'] == "Quiz"){
+			len = 1
+		}
 
-			$("#QARADIO"+num).prop("checked", true);
-			$("#QARADIO"+num).trigger("change")
-		});
+		//Check all questions are answers
+		if($('input[type=radio]:checked').length < len){
+			alert("Please answer all of the questions");
+			endMarking();
+			return
+		}
 
-		$("#QANUM"+i).change(function() {
-			//Clear all others
-			$(".radio-col").each(function(i, obj){
-				$(this).css({"background-color":"","color":""})
-			})
+		$(".quiz-answer").each(function(i, obj){
+			var _li = $(this).attr("id").split("QARADIO")
+			var i = _li[0]
+			var a = _li[1]
 
-			var num = $(this).attr("id").split("NUM")[1]
-			selectedAnswer = num
-
-			if($("#QARADIO"+num).is(':checked')) { 
-				$("#QANUM"+num).css({"background-color":"#343a40","color":"white"})
+			if(data['answers'][i][a] == 1){
+				$("#"+i+"QANUM"+a).css({"background-color":"rgb(20, 151, 66)","color":"white"})
+			}else if($(this).is(':checked')) {
+				$("#"+i+"QANUM"+a).css({"background-color":"rgb(202, 46, 46)","color":"white"})
 			}
-		});
-	}
+		})
+
+		$(".quiz-answer").each(function(i, obj){
+			$(this).prop('disabled', true);
+		})
+
+		$(".radio-col").each(function(i, obj){
+			$(this).off()
+		})
+
+		quizMarked = true
+		endMarking();
+	})
 }
 
-function MarkQuiz(){
-	if(selectedAnswer == -1){ alert("Please Select An Answer!");return}
+function MarkQuizOld(){
 	if(quizMarked){return}
 	
 	startMarking()
@@ -616,8 +747,6 @@ function endMarking(){
 	var updateBtn = document.getElementById("MarkQuiz")
 	updateBtn.innerHTML = "Submit Answer"
 }
-
-$("#MarkQuiz").click(MarkQuiz)
 </script>
 <div>
 {% endblock %}

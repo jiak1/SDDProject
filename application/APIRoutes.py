@@ -1,6 +1,6 @@
 from flask import request,Blueprint, jsonify,abort
 from .program import db
-from .models import Course,Section,Slide
+from .models import Course,Section,Slide,Question,Answer
 from .util import findProblem
 
 apiRoutes = Blueprint('APIRoutes', __name__)
@@ -19,10 +19,10 @@ def API_LoadProblem():
 			"name":_p.name,
 			"description":_p.explanation,
 			"type":_p.type,
-			"video":_p.video,
-			"possibleAnswers":_p.possibleAnswers,
-			"correctAnswer":_p.correctAnswer
+			"video":_p.video
 		}
+		if(_p.type=="Quiz"):
+			resp["questionID"] = _p.questions[0].id
 		return resp
 	return ""
 @apiRoutes.route("/api/UpdateProblem",methods=['POST'])
@@ -37,8 +37,6 @@ def API_UpdateProblem():
 		_p.name = data['name']
 		_p.explanation = data['description']
 		_p.video = data['video']
-		_p.possibleAnswers = data['possibleAnswers']
-		_p.correctAnswer = data['correctAnswer']
 		db.session.commit()
 		resp = jsonify(success=True)
 		return resp
@@ -56,6 +54,107 @@ def API_DeleteProblem():
 		db.session.commit()
 		resp = jsonify(success=True)
 		return resp
+	abort(400)
+
+@apiRoutes.route("/api/GetQuestionBank",methods=['GET'])
+def API_GetQuestionBank():
+	courseID = request.args['ID']	
+	sectionID = request.args['SECTIONID']
+	slideID = request.args['SLIDEID']		
+	_p = findProblem(courseID,sectionID,slideID)
+	
+	if _p:
+		questions = {}
+		for q in _p.questions:
+			questions[q.id] = q.name
+		print(questions)
+		return jsonify(questions)
+	abort(400)
+
+@apiRoutes.route("/api/AddQuestionToBank",methods=['GET'])
+def API_AddQuestionToBank():
+	courseID = request.args['ID']	
+	sectionID = request.args['SECTIONID']
+	slideID = request.args['SLIDEID']
+	_p = findProblem(courseID,sectionID,slideID)
+
+	if _p:
+		question = Question(slide=_p,explanation="",name="New Question")
+
+		db.session.add(question)
+		db.session.commit()
+
+		return str(question.id)
+	abort(400)
+
+@apiRoutes.route("/api/UpdateQuestionBankAnswers",methods=['POST'])
+def API_UpdateQuestionBankAnswers():
+	questionID = request.args['QID']	
+	_q = Question.query.get(int(questionID))
+
+	if _q:
+		for answer in _q.answers:
+			db.session.delete(answer)
+		
+		data = request.get_json();
+
+		for element in data:
+			_answer = Answer(question=_q,name=element['name'],correct=element['correct'])
+			db.session.add(_answer)
+		db.session.commit()
+
+		return jsonify(success=True)
+
+	abort(400)
+
+@apiRoutes.route("/api/GetQuestionBankQuestion",methods=['GET'])
+def API_GetQuestionBankQuestion():
+	questionID = request.args['QuestionID']	
+	_q = Question.query.get(int(questionID))
+
+	if _q:
+		response = {
+			"explanation":_q.explanation,
+			"name":_q.name,
+			"answers":[]
+		}
+
+		for answer in _q.answers:
+			response["answers"].append({
+				"name":answer.name,
+				"correct":answer.correct
+			})
+
+		return response
+	abort(400)
+
+@apiRoutes.route("/api/UpdateQuestionBankQuestion",methods=['POST'])
+def API_UpdateQuestionBankQuestion():
+	questionID = request.args['QID']	
+	_q = Question.query.get(int(questionID))
+
+	if _q:
+		data = request.get_json();
+		print(data['explanation'])
+		_q.name = data['name']
+		_q.explanation = data['explanation']
+		db.session.commit()
+
+		return jsonify(success=True)
+	abort(400)
+
+@apiRoutes.route("/api/DeleteQuestionBankQuestion",methods=['GET'])
+def API_DeleteQuestionBankQuestion():
+	questionID = request.args['QID']	
+	_q = Question.query.get(int(questionID))
+
+	if _q:
+		for a in _q.answers:
+			db.session.delete(a)
+		db.session.delete(_q)
+		db.session.commit()
+
+		return jsonify(success=True)
 	abort(400)
 
 @apiRoutes.route("/api/AddSection",methods=['GET'])
@@ -137,27 +236,6 @@ def API_ModeSlide():
 		return resp
 	abort(400)
 
-@apiRoutes.route("/api/MoveSlideInSection",methods=['GET'])
-def API_ModeSlideInSection():
-	courseID = request.args['ID']	
-	sectionID = request.args['SECTIONID']
-	slideID = request.args['SLIDEID']
-	newIndex = request.args['NEWINDEX']
-
-	c = Course.query.filter_by(id=courseID).first()
-	slide = c.getSlide(sectionID,slideID);
-	section = c.getSection(sectionID)
-
-
-	if slide and section:
-		oldIndex = section.orderIndex;
-		section.slides[oldIndex].orderIndex
-		section.orderIndex = newIndex
-		db.session.commit()
-		resp = jsonify(success=True)
-		return resp
-	abort(400)
-
 
 @apiRoutes.route("/api/MoveSection",methods=['GET'])
 def API_ModeSection():
@@ -170,7 +248,6 @@ def API_ModeSection():
 	inWaySection = c.getSection(newSectionID)
 
 	if oldSection and inWaySection:
-		print(str(oldSection.orderIndex)+":"+str(inWaySection.orderIndex))
 
 		direct = ""
 		if oldSection.orderIndex < inWaySection.orderIndex:
@@ -205,7 +282,7 @@ def API_PatreonUpdate():
 		info = request.get_json();
 		if(event == "members:create"):
 			status = info['data']['attributes']['patron_status']
-			print(status)
+
 		with open('data.txt', 'w') as outfile:
 			json.dump(info, outfile)
 		return jsonify(success=True)
@@ -222,7 +299,6 @@ def verifyPatreonSignature(_request,_signature):
 
 @apiRoutes.route("/api/UpdateSlideType",methods=['POST'])
 def API_ChangeSlideType():
-	courseID = request.args['ID']	
 	slideID = request.args['SLIDEID']		
 	_s = Slide.query.filter_by(id=slideID).first()
 	
@@ -230,7 +306,10 @@ def API_ChangeSlideType():
 		data = request.get_json();
 		_s.type = data['type']
 		db.session.commit()
-		resp = jsonify(success=True)
+		resp = {}
+		if(_s.type=="Quiz"):
+			resp["questionID"] = _s.questions[0].id
+
 		return resp
 	abort(400)
 
@@ -254,7 +333,6 @@ def API_GetSlide():
 			if(currentNum == problemNum):
 				found = True
 				foundSlide = slide
-				print(slide.name)
 			currentNum += 1
 
 	hasPrevious = True
@@ -269,7 +347,7 @@ def API_GetSlide():
 			"video":foundSlide.video,
 			"hasNext":hasNext,
 			"hasPrevious":hasPrevious,
-			"possibleAnswers":foundSlide.possibleAnswers
+			"id":foundSlide.id
 		}
 		return response
 	abort(400)
@@ -277,26 +355,68 @@ def API_GetSlide():
 
 @apiRoutes.route("/api/CheckQuizAnswer",methods=['POST'])
 def API_CheckQuizAnswer():
+	questionID = request.args['QID']	
+	_q = Question.query.get(int(questionID))
+
+	if _q:
+		resp = []
+		for question in _q.questions:
+			resp.append(question.correct)
+		return jsonify(resp)
+	abort(400)
+
+@apiRoutes.route("/api/GetSlideQuestions",methods=['GET'])
+def API_GetSlideQuestions():
+	slideID = request.args['SLIDEID']	
+	_s = Slide.query.get(int(slideID))
+
+	if _s:
+		resp = []
+		for question in _s.questions:
+			q = {"name":question.name,"answers":[]}
+			if(_s.type == "Quiz"):
+				q["explanation"]=_s.explanation
+			else:
+				q["explanation"]=question.explanation
+
+			for answer in question.answers:
+				q["answers"].append(answer.name)
+			resp.append(q)
+
+		return jsonify(resp)
+	abort(400)
+
+@apiRoutes.route("/api/SetSectionSlides",methods=['POST'])
+def API_SetSectionSlides():
 	courseID = request.args['ID']	
-	problemNum = int(request.args['PROBLEMNUM'])
-	course = Course.query.get(int(courseID));
+	sectionID = request.args['SECTIONID']
+	c = Course.query.filter_by(id=courseID).first()
+	section = c.getSection(sectionID);
 
-	found = False
-	foundSlide = None
-	currentNum = 1
+	if section:
+		data = request.get_json();
+		i = 1
 
-	for section in course.sections:
-		for slide in section.slides:
-			if(found):
-				break
+		for item in data['list']:
+			slide = Slide.query.get(int(item))
+			slide.orderIndex = i
+			i += 1
+		db.session.commit();
+		return jsonify(success=True)
+	abort(400)
 
-			if(currentNum == problemNum):
-				found = True
-				foundSlide = slide
-			currentNum += 1
+@apiRoutes.route("/api/GetQuizAnswers",methods=['GET'])
+def API_GetQuizAnswers():
+	slideID = request.args['SLIDEID']	
+	_s = Slide.query.get(int(slideID))
 
-	if found:
-		return {
-			"correctAnswers":foundSlide.correctAnswer
-		}
+	if _s:
+		resp = {"answers":[],"type":_s.type}
+		for question in _s.questions:
+			q = []
+			for answer in question.answers:
+				q.append(answer.correct)
+			resp["answers"].append(q)
+		print(resp)
+		return jsonify(resp)
 	abort(400)
