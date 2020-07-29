@@ -33,6 +33,13 @@
         <li class="{{ 'nav-item active' if active_page == 'viewCourses' else 'nav-item' }}">
           <a class="nav-link" href="/viewCourses"><i class="fas fa-edit"></i> Courses</a>
         </li>
+		<li class="nav-item">
+          <a class="nav-link" href="/admin_help.pdf" target="_blank"><i class="fas fa-question-circle"></i> Help</a>
+        </li>
+		{% else %}
+		<li class="nav-item">
+          <a class="nav-link" href="/student_help.pdf" target="_blank"><i class="fas fa-question-circle"></i> Help</a>
+        </li>
 		{% endif %}
       </ul>
 	<ul class="navbar-nav navbar-right">
@@ -40,7 +47,7 @@
     	<li class="{{ 'nav-item active' if active_page == 'register' else 'nav-item' }}"><a class="nav-link" href="/register"><i class="fas fa-user-plus"></i> Register</a></li>
     	<li class="{{ 'nav-item active' if active_page == 'login' else 'nav-item' }}"><a class="nav-link" href="/login"><i class="fa fa-sign-in" aria-hidden="true"></i> Login</a></li>
 	{% else %}
-		<li class="nav-item"><a class="nav-link" href="/profile"><i class="fas fa-user"></i> Welcome {{current_user.username}}</a></li>
+		<li class="nav-item"><a class="nav-link" href="#"><i class="fas fa-user"></i> Welcome {{current_user.username}}</a></li>
 		<li class="nav-item"><a class="nav-link" href="logout"><i class="fas fa-sign-out-alt"></i> Log Out</a></li>
 	{% endif %}
     </ul>

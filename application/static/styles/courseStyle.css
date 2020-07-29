@@ -1,7 +1,6 @@
 *:focus {
     outline: 0;
 }
-
 /* ---------------------------------------------------
     SIDEBAR STYLE
 ----------------------------------------------------- */
@@ -378,8 +377,9 @@ label{
 	margin-left: auto;
     margin-right: auto;
     display: block;
-	margin-top: calc(-30% + 30px);
-	margin-bottom:20px;
+	margin-top: calc(-1 * (min(30%,200px)) + 30px);
+	margin-bottom:30%;
+	transition: margin-top 1s ease-in-out,margin-bottom 0.1s ease-in-out;
 }
 
 .QuizText{
@@ -390,8 +390,9 @@ label{
 }
 
 .CenteringDiv{
-	padding-top:30%;
-	padding-bottom:30%;
+	padding-top:min(30%,200px);
+	padding-bottom:min(30%,200px);
+	transition: padding-top 1s ease-in-out,padding-bottom 1s ease-in-out;
 	margin-top:5vw;
 }
 
@@ -438,4 +439,15 @@ img{
 	margin: auto;
     margin-top: 30px;
     display: block;
+}
+
+.NextQuestionsButton{
+	margin-left: auto;
+    margin-right: auto;
+    display: block;
+    margin-top: 10px;
+}
+
+.list-sortable{
+	direction: ltr !important;
 }

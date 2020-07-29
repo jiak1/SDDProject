@@ -1,3 +1,13 @@
 .card-img-top{
 	object-fit:contain !important;
 }
+
+#jumbo-main{
+	max-width: 90%;
+    min-width: 300px;
+    position: absolute;
+    top: 50%;
+    left: 35%;
+    width: 80%;
+    margin: -15% 0 0 -25%;
+}

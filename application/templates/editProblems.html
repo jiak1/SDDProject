@@ -273,7 +273,11 @@
 		$("#pList"+sectionID+"-"+sideID).attr("href", "#");
 		$("#pList"+sectionID+"-"+sideID).attr("specialid", sideID);
 
-		newP.onclick = function(){loadProblem(sectionID,sideID)}
+		newP.onclick = function(){
+			x = this.id.split("List")[1]
+			y = x.split("-")
+			loadProblem(y[0],y[1])
+			}
 
       });
 	};
@@ -516,6 +520,7 @@
 	function showSection(){
 		sectionTab.css({"opacity":1});
 		sectionTab.css({"display":""});
+		$("#QuizBankLoadingDiv").css({"display":"none"})
 		setupMaxHeight(true,false);
 	}
 
@@ -657,6 +662,8 @@
 		hidePanel();
 		removeDelBadge();
 		currentSectionID = sectionID;
+
+		hideSection();
 
 		deselectSections();
 		$("#ListSection"+sectionID).css({"background-color":"rgb(52, 58, 64)"})

@@ -8,6 +8,13 @@
 
 {% block body %}
 {% if current_user.is_anonymous %}
+<div class="jumbotron" id="jumbo-main">
+  <h1 class="display-4">Welcome</h1>
+  <p class="lead">In order to access any courses you need to either <b>Login</b> or <b>Register an Account</b>.</p>
+  <hr class="my-4">
+  <a class="btn btn-primary btn-lg" href="/login" role="button">Login</a>
+  <a class="btn btn-primary btn-lg" href="/register" role="button">Register</a>
+</div>
 {% else %}
 <br>
 <h1>Available Courses:</h1>
