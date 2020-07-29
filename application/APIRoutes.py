@@ -2,6 +2,7 @@ from flask import request,Blueprint, jsonify,abort
 from .program import db
 from .models import Course,Section,Slide,Question,Answer
 from .util import findProblem
+import json
 
 #Create blueprint so that the pages can be registered in the main program
 apiRoutes = Blueprint('APIRoutes', __name__)
@@ -261,13 +262,16 @@ def API_LoadSection():
 #API route for updating a sections details (only name at this point)
 @apiRoutes.route("/api/UpdateSection",methods=['POST'])
 def API_UpdateSection():
+	#Get the course ID and section ID from the POST request headers
 	courseID = request.args['ID']	
 	sectionID = request.args['SECTIONID']
 
+	#Try and get the course and relevant section from the database
 	c = Course.query.filter_by(id=courseID).first()
 	section = c.getSection(sectionID);
 	
 	if section:
+		#Change the section name and save it to the database
 		data = request.get_json();
 		section.name = data['name']
 		db.session.commit()
@@ -276,35 +280,46 @@ def API_UpdateSection():
 	#Return error code because problem doesn't exist
 	abort(400)
 
+#API route for deleting a section
 @apiRoutes.route("/api/DeleteSection",methods=['GET'])
 def API_DeleteSection():
+	#Get the course ID and section ID from the POST request headers
 	courseID = request.args['ID']	
 	sectionID = request.args['SECTIONID']
 
+	#Try and get the course and relevant section from the database
 	c = Course.query.filter_by(id=courseID).first()
 	section = c.getSection(sectionID);
 	
 	if section:
+		#Loop through all of the slides in the section and delete them
 		for slide in section.slides:
 			db.session.delete(slide)
+		#Delete the section and save the changes to the database
 		db.session.delete(section)
 		db.session.commit()
+
+		#Return a success message
 		resp = jsonify(success=True)
 		return resp
 	#Return error code because problem doesn't exist
 	abort(400)
 
+#APIRoute that is called when a slide moves to another section
 @apiRoutes.route("/api/MoveSlide",methods=['GET'])
 def API_ModeSlide():
+	#Get the arguments passed with the GET header
 	courseID = request.args['ID']	
 	newSectionID = request.args['NEWSECTIONID']
 	oldSectionID = request.args['OLDSECTIONID']
 	slideID = request.args['SLIDEID']
 
+	#Try and get the course and relevant section from the database as well as the new section the slide is moving to
 	c = Course.query.filter_by(id=courseID).first()
 	slide = c.getSlide(oldSectionID,slideID);
 	newSection = c.getSection(newSectionID);
 	
+	#If the slide and section ID are correct then change the section the slide is part of and save it to the database
 	if slide and newSection:
 		slide.section = newSection
 		db.session.commit()
@@ -313,24 +328,30 @@ def API_ModeSlide():
 	#Return error code because problem doesn't exist
 	abort(400)
 
-
+#API route called when a section is reordered e.g dragged up or down
 @apiRoutes.route("/api/MoveSection",methods=['GET'])
 def API_ModeSection():
+	#Gather the arguments passed with the GET header
 	courseID = request.args['ID']	
 	oldSectionID = request.args['OLDSECTIONID']
 	newSectionID = request.args['NEWSECTIONID']
 
+	#Try and get the course, previous and section that was previously in the spot we want to move to from the database
 	c = Course.query.filter_by(id=courseID).first()
 	oldSection = c.getSection(oldSectionID)
 	inWaySection = c.getSection(newSectionID)
 
 	if oldSection and inWaySection:
-
+		
 		direct = ""
 		if oldSection.orderIndex < inWaySection.orderIndex:
 			direct = "MOVEUP" #The section is dragging down so we need to move all the others up out of its way
 		oldSection.orderIndex = inWaySection.orderIndex #The moved item takes the spot of the item that way previously there
+
+		#Save changes to the database
 		db.session.commit()
+
+		#Call moveOrder which will move all of the other sections in between the old and the new either up or down one
 		moveOrder(inWaySection,c,direct)
 		db.session.commit()
 
@@ -338,52 +359,65 @@ def API_ModeSection():
 	#Return error code because problem doesn't exist
 	abort(400)
 
+#Move a set of sections either up or down one in a specific course
 def moveOrder(_section,_course,_direction):
 	if _direction == "MOVEUP":
 		moveIndex = _section.orderIndex-1
 	else:
 		moveIndex = _section.orderIndex+1
 
+	#Check if there is a section currently in the position we just moved another section into, if so then continue moving it in the relevant direction until there is a free spot
 	inWaySection = _course.getSectionByOrder(moveIndex)
 
 	_section.orderIndex = moveIndex
 
 	if inWaySection:
 		moveOrder(inWaySection,_course,_direction)
-import json
+
+#API route that gets called when a person pledges to be a patreon on the clients patreon page, eventually the plan is to give them access to specific courses
 @apiRoutes.route("/api/PatreonUpdate",methods=['POST'])
 def API_PatreonUpdate():
+	#Get the special signatures and the name of the event e.g new_pledge
 	event = request.headers.get('X-Patreon-Event')
 	signature = request.headers.get('X-Patreon-Signature')
 
+	#Check the signature is an encrypted version of the event that matches our private key - used to verify this request came from patreon
 	if event and signature and verifyPatreonSignature(request,signature):
 		info = request.get_json();
 		if(event == "members:create"):
 			status = info['data']['attributes']['patron_status']
+			#Eventually add code here that would enrol the user in specific compile
 
-		with open('data.txt', 'w') as outfile:
-			json.dump(info, outfile)
+		#Return success to the patreon API otherwise it will try and resend the request over and over and give an error
 		return jsonify(success=True)
 	return jsonify(success=False)
 
-#Patreon Secret Key
+#Patreon Secret Key in a byte array
 secret = b"D80yIRVRs99Ip6Jc0LDZqS3eZUMqACWj9jElUzu8-LUmRNREJxmnIVQklObxH_sv"
+#Used to check that the patreon signature is from Patreon and not an imposter
 def verifyPatreonSignature(_request,_signature):
+	#Use the cryptography libraries to get the hashed version of the request and check it amounts to our secret.
 	digest = hmac.new(secret,_request.get_data(),digestmod=hashlib.md5).hexdigest()
 
 	if(digest == _signature):
 		return True
 	return False
 
+#API route that is used when a slides type is changed
 @apiRoutes.route("/api/UpdateSlideType",methods=['POST'])
 def API_ChangeSlideType():
+	#Get the slide ID from the POST requests header
 	slideID = request.args['SLIDEID']		
+
+	#Try and get the slide with the ID from the database and check it exists
 	_s = Slide.query.filter_by(id=slideID).first()
-	
 	if _s:
+		#Change the slides type and update the database
 		data = request.get_json();
 		_s.type = data['type']
 		db.session.commit()
+
+		#If it is changed to a quiz then reply with the questions ID so the client can request the details of that question and display them
 		resp = {}
 		if(_s.type=="Quiz"):
 			resp["questionID"] = _s.questions[0].id
@@ -393,12 +427,15 @@ def API_ChangeSlideType():
 	abort(400)
 
 
+#API route used for getting a slides details
 @apiRoutes.route("/api/GetSlide",methods=['POST'])
 def API_GetSlide():
+	#Get the relevant data from the POST requests headers
 	courseID = request.args['ID']	
 	problemNum = int(request.args['PROBLEMNUM'])
 	course = Course.query.get(int(courseID));
 
+	#Loop through the courses and sections and get the one at the requested orderIndex, this needs to be a loop because sometimes the order index isn't the same as its position in the hierachy e.g the first slide may have an order index of 10.
 	found = False
 	foundSlide = None
 	currentNum = 1
@@ -414,10 +451,12 @@ def API_GetSlide():
 				foundSlide = slide
 			currentNum += 1
 
+	#Check if there is a slide before it so the client can choose whether to enable the arrow for moving backwards.
 	hasPrevious = True
 	if(problemNum == 1):
 		hasPrevious = False
 
+	#If the slide order was found then return its details
 	if found:
 		response = {
 			"name":foundSlide.name,
@@ -432,13 +471,16 @@ def API_GetSlide():
 	#Return error code because problem doesn't exist
 	abort(400)
 
-
+#API route to return the correct answers to a question/quiz
 @apiRoutes.route("/api/CheckQuizAnswer",methods=['POST'])
 def API_CheckQuizAnswer():
+	#Get the question ID from the headers in the POST request
 	questionID = request.args['QID']	
-	_q = Question.query.get(int(questionID))
 
+	#Get the question from the database and check it exists
+	_q = Question.query.get(int(questionID))
 	if _q:
+		#Loop through correct questions and return a list of them
 		resp = []
 		for question in _q.questions:
 			resp.append(question.correct)
@@ -446,12 +488,16 @@ def API_CheckQuizAnswer():
 	#Return error code because problem doesn't exist
 	abort(400)
 
+#API route for getting the questions on a slide
 @apiRoutes.route("/api/GetSlideQuestions",methods=['GET'])
 def API_GetSlideQuestions():
+	#Gather the slide id passed in with the GET request
 	slideID = request.args['SLIDEID']	
-	_s = Slide.query.get(int(slideID))
 
+	#Try and get the slide with the id from the database and check it exists
+	_s = Slide.query.get(int(slideID))
 	if _s:
+		#Loop through the questions in a slide and add them to a dictionary with their answers
 		resp = []
 		for question in _s.questions:
 			q = {"name":question.name,"answers":[]}
@@ -464,18 +510,24 @@ def API_GetSlideQuestions():
 				q["answers"].append(answer.name)
 			resp.append(q)
 
+		#Return completed list of questions
 		return jsonify(resp)
 	#Return error code because problem doesn't exist
 	abort(400)
 
+#API Route for redordering a slide within a section
 @apiRoutes.route("/api/SetSectionSlides",methods=['POST'])
 def API_SetSectionSlides():
+	#Gather the course and section IDS from the POST requests headers
 	courseID = request.args['ID']	
 	sectionID = request.args['SECTIONID']
+
+	#Check that the given section exists in the database
 	c = Course.query.filter_by(id=courseID).first()
 	section = c.getSection(sectionID);
 
 	if section:
+		#Loop through the JSON given from the javascript, this contains a list of slide ids and essentially we just loop through and set all of the order indexes dependant on the ordering of the list and update the database.
 		data = request.get_json();
 		i = 1
 
@@ -484,23 +536,29 @@ def API_SetSectionSlides():
 			slide.orderIndex = i
 			i += 1
 		db.session.commit();
+		#Return Success!
 		return jsonify(success=True)
 	#Return error code because problem doesn't exist
 	abort(400)
 
+#API route for getting all of the possible answers in a quiz/question bank
 @apiRoutes.route("/api/GetQuizAnswers",methods=['GET'])
 def API_GetQuizAnswers():
+	#Get the SLIDE ID passed in with the GET request
 	slideID = request.args['SLIDEID']	
+
+	#Try and find a slide with the relevant ID in the database
 	_s = Slide.query.get(int(slideID))
 
 	if _s:
+		#Loop through the questions for the slide and add them to the dictionary's list and return it in a JSON format
 		resp = {"answers":[],"type":_s.type}
 		for question in _s.questions:
 			q = []
 			for answer in question.answers:
 				q.append(answer.correct)
 			resp["answers"].append(q)
-		print(resp)
+
 		return jsonify(resp)
 	#Return error code because problem doesn't exist
 	abort(400)
